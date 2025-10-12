@@ -36,8 +36,6 @@ function renderHeader() {
                                 ${renderSearchResults()}
                             </div>
                         </div>
-
-                        <div class="text-sm text-slate-300">${STATE.today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</div>
                     </div>
                 </div>
             </div>

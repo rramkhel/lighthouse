@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Legal Document & Subpoena Tracker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #229954;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4);
+        }
+
+        .filters {
+            background: #f8f9fa;
+            padding: 20px 40px;
+            border-bottom: 2px solid #e9ecef;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filter-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #495057;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-group select {
+            padding: 8px 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+
+        .filter-group select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            padding: 20px 40px 40px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        thead {
+            background: #2c3e50;
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        th {
+            padding: 16px 12px;
+            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+            border-bottom: 3px solid #34495e;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #e9ecef;
+            transition: background-color 0.2s ease;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        td {
+            padding: 16px 12px;
+            vertical-align: top;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-draft { background: #e9ecef; color: #495057; }
+        .status-issued { background: #fff3cd; color: #856404; }
+        .status-served { background: #d1ecf1; color: #0c5460; }
+        .status-pending { background: #f8d7da; color: #721c24; }
+        .status-received { background: #d4edda; color: #155724; }
+        .status-overdue { background: #f5c6cb; color: #721c24; font-weight: 700; }
+
+        .priority-high { color: #dc3545; font-weight: 700; }
+        .priority-medium { color: #fd7e14; font-weight: 600; }
+        .priority-low { color: #6c757d; font-weight: 500; }
+
+        .date-cell {
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .date-warning {
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        .date-upcoming {
+            color: #fd7e14;
+            font-weight: 600;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .action-btn:hover {
+            background: #f8f9fa;
+            border-color: #adb5bd;
+        }
+
+        .action-btn.delete:hover {
+            background: #dc3545;
+            color: white;
+            border-color: #dc3545;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        select,
+        textarea {
+            padding: 8px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            width: 100%;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="date"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .modal-header h2 {
+            font-size: 24px;
+            color: #2c3e50;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #6c757d;
+            line-height: 1;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+        }
+
+        .close-btn:hover {
+            color: #dc3545;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+
+        .legend {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .legend h3 {
+            font-size: 16px;
+            margin-bottom: 12px;
+            color: #2c3e50;
+        }
+
+        .legend-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Legal Document & Subpoena Tracker</h1>
+            <div class="header-buttons">
+                <button class="btn btn-primary" onclick="openAddModal()">
+                    <span>+</span> Add New Entry
+                </button>
+                <button class="btn btn-success" onclick="exportToExcel()">
+                    <span>⬇</span> Export to Excel
+                </button>
+            </div>
+        </div>
+
+        <div class="filters">
+            <div class="filter-group">
+                <label>Status</label>
+                <select id="filterStatus" onchange="applyFilters()">
+                    <option value="">All Statuses</option>
+                    <option value="Draft">Draft</option>
+                    <option value="Issued">Issued</option>
+                    <option value="Served">Served</option>
+                    <option value="Pending Response">Pending Response</option>
+                    <option value="Received">Received</option>
+                    <option value="Overdue">Overdue</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Priority</label>
+                <select id="filterPriority" onchange="applyFilters()">
+                    <option value="">All Priorities</option>
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Assigned To</label>
+                <select id="filterAssigned" onchange="applyFilters()">
+                    <option value="">Everyone</option>
+                    <option value="You">You</option>
+                    <option value="Assistant">Assistant</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table id="mainTable">
+                <thead>
+                    <tr>
+                        <th>Recipient</th>
+                        <th>Type</th>
+                        <th>Document Type</th>
+                        <th>Status</th>
+                        <th>Service Deadline</th>
+                        <th>Response Deadline</th>
+                        <th>Documents Requested</th>
+                        <th>Documents Received</th>
+                        <th>Outstanding</th>
+                        <th>Priority</th>
+                        <th>Assigned To</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="legend">
+            <h3>Status Legend</h3>
+            <div class="legend-items">
+                <div class="legend-item">
+                    <span class="status-badge status-draft">Draft</span>
+                    <span>Being prepared</span>
+                </div>
+                <div class="legend-item">
+                    <span class="status-badge status-issued">Issued</span>
+                    <span>Issued but not served</span>
+                </div>
+                <div class="legend-item">
+                    <span class="status-badge status-served">Served</span>
+                    <span>Served to recipient</span>
+                </div>
+                <div class="legend-item">
+                    <span class="status-badge status-pending">Pending</span>
+                    <span>Awaiting response</span>
+                </div>
+                <div class="legend-item">
+                    <span class="status-badge status-received">Received</span>
+                    <span>Documents received</span>
+                </div>
+                <div class="legend-item">
+                    <span class="status-badge status-overdue">Overdue</span>
+                    <span>Past deadline</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="addModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add New Entry</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="addForm" onsubmit="addEntry(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Recipient Name *</label>
+                        <input type="text" name="recipientName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Recipient Type *</label>
+                        <select name="recipientType" required>
+                            <option value="">Select...</option>
+                            <option value="Witness">Witness</option>
+                            <option value="Expert Witness">Expert Witness</option>
+                            <option value="Third Party">Third Party</option>
+                            <option value="Defendant">Defendant</option>
+                            <option value="Plaintiff">Plaintiff</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Document Type *</label>
+                        <select name="documentType" required>
+                            <option value="">Select...</option>
+                            <option value="Subpoena">Subpoena</option>
+                            <option value="Subpoena Duces Tecum">Subpoena Duces Tecum</option>
+                            <option value="Document Request">Document Request</option>
+                            <option value="Interrogatories">Interrogatories</option>
+                            <option value="Request for Admission">Request for Admission</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Status *</label>
+                        <select name="status" required>
+                            <option value="Draft">Draft</option>
+                            <option value="Issued">Issued</option>
+                            <option value="Served">Served</option>
+                            <option value="Pending Response">Pending Response</option>
+                            <option value="Received">Received</option>
+                            <option value="Overdue">Overdue</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Date Issued</label>
+                        <input type="date" name="dateIssued">
+                    </div>
+                    <div class="form-group">
+                        <label>Service Deadline</label>
+                        <input type="date" name="serviceDeadline">
+                    </div>
+                    <div class="form-group">
+                        <label>Response Deadline</label>
+                        <input type="date" name="responseDeadline">
+                    </div>
+                    <div class="form-group">
+                        <label>Notice Requirements</label>
+                        <input type="text" name="noticeRequirements" placeholder="e.g., 14 days notice required">
+                    </div>
+                    <div class="form-group">
+                        <label>Priority *</label>
+                        <select name="priority" required>
+                            <option value="High">High</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Low">Low</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Assigned To *</label>
+                        <select name="assignedTo" required>
+                            <option value="You">You</option>
+                            <option value="Assistant">Assistant</option>
+                        </select>
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Documents Requested</label>
+                        <textarea name="documentsRequested" placeholder="List documents requested..."></textarea>
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Documents Received</label>
+                        <textarea name="documentsReceived" placeholder="List documents received..."></textarea>
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Documents Outstanding</label>
+                        <textarea name="documentsOutstanding" placeholder="List documents still needed..."></textarea>
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Notes</label>
+                        <textarea name="notes" placeholder="Additional notes..."></textarea>
+                    </div>
+                </div>
+                <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
+                    <button type="button" class="btn" onclick="closeModal()" style="background: #6c757d; color: white;">Cancel</button>
+                    <button type="submit" class="btn btn-success">Add Entry</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let entries = [
+            {
+                id: 1,
+                recipientName: 'John Smith',
+                recipientType: 'Witness',
+                documentType: 'Subpoena Duces Tecum',
+                dateIssued: '2025-10-01',
+                serviceDeadline: '2025-10-15',
+                responseDeadline: '2025-10-29',
+                status: 'Served',
+                documentsRequested: 'Medical records from 2023-2025\nEmployment history and personnel files',
+                documentsReceived: 'Medical records (partial - Jan-Jun 2024 only)',
+                documentsOutstanding: 'Medical records (2023, Jul-Dec 2024, 2025)\nComplete employment history',
+                noticeRequirements: '14 days notice required',
+                priority: 'High',
+                assignedTo: 'Assistant',
+                notes: 'Follow up on missing medical records by Oct 20'
+            },
+            {
+                id: 2,
+                recipientName: 'Dr. Jane Doe',
+                recipientType: 'Expert Witness',
+                documentType: 'Document Request',
+                dateIssued: '2025-09-28',
+                serviceDeadline: '2025-10-10',
+                responseDeadline: '2025-10-24',
+                status: 'Pending Response',
+                documentsRequested: 'Expert report\nCV and qualifications\nBilling records and time sheets',
+                documentsReceived: 'None',
+                documentsOutstanding: 'All documents outstanding',
+                noticeRequirements: '10 days notice required',
+                priority: 'High',
+                assignedTo: 'Assistant',
+                notes: 'No response yet - assistant to follow up by Oct 15'
+            },
+            {
+                id: 3,
+                recipientName: 'ABC Corporation',
+                recipientType: 'Third Party',
+                documentType: 'Subpoena',
+                dateIssued: '',
+                serviceDeadline: '2025-10-20',
+                responseDeadline: '2025-11-03',
+                status: 'Draft',
+                documentsRequested: 'Financial records 2023-2024\nAll contracts with defendant\nEmail correspondence related to case',
+                documentsReceived: 'N/A',
+                documentsOutstanding: 'N/A',
+                noticeRequirements: '15 days notice required',
+                priority: 'Medium',
+                assignedTo: 'You',
+                notes: 'Need to finalize subpoena language before issuing'
+            }
+        ];
+
+        let filteredEntries = [...entries];
+        let nextId = 4;
+
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            filteredEntries.forEach(entry => {
+                const row = document.createElement('tr');
+                
+                const today = new Date();
+                const responseDeadline = entry.responseDeadline ? new Date(entry.responseDeadline) : null;
+                const serviceDeadline = entry.serviceDeadline ? new Date(entry.serviceDeadline) : null;
+                
+                let deadlineClass = '';
+                if (responseDeadline) {
+                    const daysUntil = Math.ceil((responseDeadline - today) / (1000 * 60 * 60 * 24));
+                    if (daysUntil < 0) deadlineClass = 'date-warning';
+                    else if (daysUntil <= 7) deadlineClass = 'date-upcoming';
+                }
+
+                row.innerHTML = `
+                    <td><strong>${entry.recipientName}</strong><br><small style="color: #6c757d;">${entry.recipientType}</small></td>
+                    <td>${entry.documentType}</td>
+                    <td><span class="status-badge status-${entry.status.toLowerCase().replace(' ', '-')}">${entry.status}</span></td>
+                    <td class="date-cell">${entry.serviceDeadline || '-'}</td>
+                    <td class="date-cell ${deadlineClass}">${entry.responseDeadline || '-'}</td>
+                    <td style="max-width: 200px; white-space: pre-wrap; font-size: 13px;">${entry.documentsRequested || '-'}</td>
+                    <td style="max-width: 200px; white-space: pre-wrap; font-size: 13px;">${entry.documentsReceived || '-'}</td>
+                    <td style="max-width: 200px; white-space: pre-wrap; font-size: 13px;">${entry.documentsOutstanding || '-'}</td>
+                    <td class="priority-${entry.priority.toLowerCase()}">${entry.priority}</td>
+                    <td>${entry.assignedTo}</td>
+                    <td class="actions">
+                        <button class="action-btn" onclick="editEntry(${entry.id})">Edit</button>
+                        <button class="action-btn delete" onclick="deleteEntry(${entry.id})">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function applyFilters() {
+            const statusFilter = document.getElementById('filterStatus').value;
+            const priorityFilter = document.getElementById('filterPriority').value;
+            const assignedFilter = document.getElementById('filterAssigned').value;
+
+            filteredEntries = entries.filter(entry => {
+                if (statusFilter && entry.status !== statusFilter) return false;
+                if (priorityFilter && entry.priority !== priorityFilter) return false;
+                if (assignedFilter && entry.assignedTo !== assignedFilter) return false;
+                return true;
+            });
+
+            renderTable();
+        }
+
+        function openAddModal() {
+            document.getElementById('addModal').classList.add('active');
+            document.getElementById('addForm').reset();
+        }
+
+        function closeModal() {
+            document.getElementById('addModal').classList.remove('active');
+        }
+
+        function addEntry(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const newEntry = {
+                id: nextId++,
+                recipientName: formData.get('recipientName'),
+                recipientType: formData.get('recipientType'),
+                documentType: formData.get('documentType'),
+                dateIssued: formData.get('dateIssued'),
+                serviceDeadline: formData.get('serviceDeadline'),
+                responseDeadline: formData.get('responseDeadline'),
+                status: formData.get('status'),
+                documentsRequested: formData.get('documentsRequested'),
+                documentsReceived: formData.get('documentsReceived'),
+                documentsOutstanding: formData.get('documentsOutstanding'),
+                noticeRequirements: formData.get('noticeRequirements'),
+                priority: formData.get('priority'),
+                assignedTo: formData.get('assignedTo'),
+                notes: formData.get('notes')
+            };
+            entries.push(newEntry);
+            applyFilters();
+            closeModal();
+        }
+
+        function deleteEntry(id) {
+            if (confirm('Are you sure you want to delete this entry?')) {
+                entries = entries.filter(e => e.id !== id);
+                applyFilters();
+            }
+        }
+
+        function editEntry(id) {
+            alert('Edit functionality would open a modal with the entry data. For now, please delete and re-add the entry.');
+        }
+
+        function exportToExcel() {
+            const data = entries.map(entry => ({
+                'Recipient Name': entry.recipientName,
+                'Recipient Type': entry.recipientType,
+                'Document Type': entry.documentType,
+                'Date Issued': entry.dateIssued,
+                'Service Deadline': entry.serviceDeadline,
+                'Response Deadline': entry.responseDeadline,
+                'Status': entry.status,
+                'Documents Requested': entry.documentsRequested,
+                'Documents Received': entry.documentsReceived,
+                'Documents Outstanding': entry.documentsOutstanding,
+                'Notice Requirements': entry.noticeRequirements,
+                'Priority': entry.priority,
+                'Assigned To': entry.assignedTo,
+                'Notes': entry.notes
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Subpoena Tracker');
+            
+            const colWidths = [
+                { wch: 20 }, // Recipient Name
+                { wch: 15 }, // Recipient Type
+                { wch: 20 }, // Document Type
+                { wch: 12 }, // Date Issued
+                { wch: 15 }, // Service Deadline
+                { wch: 15 }, // Response Deadline
+                { wch: 15 }, // Status
+                { wch: 30 }, // Documents Requested
+                { wch: 30 }, // Documents Received
+                { wch: 30 }, // Documents Outstanding
+                { wch: 20 }, // Notice Requirements
+                { wch: 10 }, // Priority
+                { wch: 12 }, // Assigned To
+                { wch: 40 }  // Notes
+            ];
+            ws['!cols'] = colWidths;
+            
+            XLSX.writeFile(wb, 'Legal_Document_Tracker.xlsx');
+        }
+
+        renderTable();
+    </script>
+</body>
+</html>

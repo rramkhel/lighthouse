@@ -24,7 +24,7 @@ function renderNavigation(currentView) {
     const navHTML = navItems.map(item => `
         <button
             onclick="Router.navigate('/${item.id}')"
-            class="flex items-center gap-3 px-4 py-3 font-medium text-sm transition-all rounded-lg w-full ${currentView === item.id
+            class="flex items-center ${isOpen ? 'gap-3 px-4' : 'justify-center px-0'} py-3 font-medium text-sm transition-all rounded-lg w-full ${currentView === item.id
             ? 'bg-blue-600 text-white shadow-sm'
             : 'text-gray-700 hover:bg-gray-100'
         }"

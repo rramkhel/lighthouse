@@ -53,8 +53,8 @@ const STATE = {
     today: new Date(),
     userName: 'Conner',
     expandedCard: null,
-    sidebarOpen: true,
-    rightSidebarOpen: true,
+    sidebarOpen: false,
+    rightSidebarOpen: false,
     rightSidebarTab: 'summary',
     rightSidebarDetail: null,
     // Search state

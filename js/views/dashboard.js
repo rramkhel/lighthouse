@@ -121,6 +121,7 @@ function renderDashboard() {
                 <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-100">
                     <h2 class="text-2xl font-bold text-gray-900">Good ${timeOfDay}, ${STATE.userName}!</h2>
                     <p class="text-gray-600 mt-1">${greeting}</p>
+                    <p class="text-xs text-gray-500 mt-2">${STATE.today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</p>
                 </div>
 
                 <!-- Dashboard Summary -->
