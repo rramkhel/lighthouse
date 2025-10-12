@@ -3,6 +3,9 @@
 
 A web-based application for managing criminal cases, documents, court dates, and trial preparation.
 
+## 🌐 Live Demo
+GitHub Pages URL: https://rramkhel.github.io/lighthouse/
+
 ## Features
 
 - 📊 **Dashboard** - Overview of all cases with urgent items highlighted
