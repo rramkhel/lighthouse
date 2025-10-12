@@ -84,3 +84,150 @@ const createIcon = (iconName, classes = 'w-4 h-4') => {
     icon.className = classes;
     return icon;
 };
+
+// Format timestamp for recent changes display
+const formatTimestamp = (timestamp) => {
+    const date = new Date(timestamp);
+    const now = STATE.today;
+
+    // Calculate difference in hours
+    const diffHours = Math.floor((now - date) / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffHours / 24);
+
+    // Time portion
+    const timeStr = date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+    });
+
+    // Determine day label
+    if (diffDays === 0) {
+        return `Today, ${timeStr}`;
+    } else if (diffDays === 1) {
+        return `Yesterday, ${timeStr}`;
+    } else if (diffDays < 7) {
+        return `${diffDays} days ago, ${timeStr}`;
+    } else {
+        return formatDate(timestamp);
+    }
+};
+
+// Group recent changes by time period
+const groupRecentChanges = (changes) => {
+    const now = STATE.today;
+    const grouped = {
+        today: [],
+        yesterday: [],
+        earlier: []
+    };
+
+    changes.forEach(change => {
+        const date = new Date(change.timestamp);
+        const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 0) {
+            grouped.today.push(change);
+        } else if (diffDays === 1) {
+            grouped.yesterday.push(change);
+        } else {
+            grouped.earlier.push(change);
+        }
+    });
+
+    return grouped;
+};
+
+// Global search across all data
+const performSearch = (query) => {
+    if (!query || query.trim().length < 2) {
+        return null;
+    }
+
+    const searchTerm = query.toLowerCase().trim();
+
+    // Search cases
+    const cases = DATA.cases.filter(c =>
+        c.name.toLowerCase().includes(searchTerm) ||
+        c.accused.toLowerCase().includes(searchTerm) ||
+        c.charges.toLowerCase().includes(searchTerm)
+    );
+
+    // Search documents
+    const documents = DATA.documentRequests.filter(d =>
+        d.recipient.toLowerCase().includes(searchTerm) ||
+        d.type.toLowerCase().includes(searchTerm) ||
+        d.caseName.toLowerCase().includes(searchTerm)
+    );
+
+    // Search court dates
+    const courtDates = DATA.courtDates.filter(e =>
+        e.type.toLowerCase().includes(searchTerm) ||
+        e.caseName.toLowerCase().includes(searchTerm) ||
+        e.location.toLowerCase().includes(searchTerm)
+    );
+
+    return {
+        cases: cases.slice(0, 5),      // Limit to 5 results per category
+        documents: documents.slice(0, 5),
+        courtDates: courtDates.slice(0, 5),
+        totalResults: cases.length + documents.length + courtDates.length
+    };
+};
+
+// Handle search input
+const handleSearchInput = (value) => {
+    STATE.searchQuery = value;
+    STATE.searchResults = performSearch(value);
+    STATE.searchVisible = value.length >= 2;
+
+    // Only update the search results dropdown, not the entire page
+    const searchResultsContainer = document.querySelector('.search-results-container');
+    if (searchResultsContainer) {
+        searchResultsContainer.innerHTML = renderSearchResults();
+        // Re-initialize icons in the search results
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+    }
+};
+
+// Clear search
+const clearSearch = () => {
+    STATE.searchQuery = '';
+    STATE.searchResults = null;
+    STATE.searchVisible = false;
+    render();
+};
+
+// Navigate to search result
+const navigateToSearchResult = (type, id) => {
+    clearSearch();
+
+    switch(type) {
+        case 'case':
+            Router.navigate(`/case/${id}`);
+            break;
+        case 'document':
+            // Find the case for this document
+            const doc = DATA.documentRequests.find(d => d.id === id);
+            if (doc) {
+                Router.navigate(`/case/${doc.caseId}`);
+            }
+            break;
+        case 'court':
+            // Find the case for this court date
+            const court = DATA.courtDates.find(c => c.id === id);
+            if (court) {
+                Router.navigate(`/case/${court.caseId}`);
+            }
+            break;
+    }
+};
+
+// Navigate to full search results page
+const navigateToSearchPage = () => {
+    // Keep the search query and results, but hide the dropdown
+    STATE.searchVisible = false;
+    Router.navigate('/search');
+};

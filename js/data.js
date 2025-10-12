@@ -49,6 +49,96 @@ const DATA = {
 const STATE = {
     currentView: 'dashboard',
     selectedCase: null,
-    calendarMonth: new Date('2025-10-01'),
-    today: new Date('2025-10-11')
+    calendarMonth: new Date(),
+    today: new Date(),
+    userName: 'Conner',
+    expandedCard: null,
+    sidebarOpen: true,
+    rightSidebarOpen: true,
+    rightSidebarTab: 'summary',
+    rightSidebarDetail: null,
+    // Search state
+    searchQuery: '',
+    searchResults: null,
+    searchVisible: false,
+    // Week Planner state
+    weekSchedule: null,
+    schedulingRules: {
+        startTime: '09:00',
+        endTime: '17:00',
+        trialPrepBlockHours: 2
+    },
+    // Recent changes - in production this would come from backend/activity log
+    recentChanges: [
+        {
+            id: 1,
+            type: 'document',
+            caseId: 1,
+            caseName: 'R v. Thompson',
+            description: 'Medical records received (partial)',
+            timestamp: '2025-10-11T08:30:00',
+            icon: 'file-check',
+            priority: 'normal'
+        },
+        {
+            id: 2,
+            type: 'document',
+            caseId: 5,
+            caseName: 'R v. Patel',
+            description: 'Financial records marked overdue',
+            timestamp: '2025-10-11T00:01:00',
+            icon: 'alert-circle',
+            priority: 'high'
+        },
+        {
+            id: 3,
+            type: 'court',
+            caseId: 2,
+            caseName: 'R v. Chen',
+            description: 'Bail hearing in 4 days',
+            timestamp: '2025-10-10T16:45:00',
+            icon: 'calendar',
+            priority: 'normal'
+        },
+        {
+            id: 4,
+            type: 'case',
+            caseId: 1,
+            caseName: 'R v. Thompson',
+            description: 'Case status updated to Trial Prep',
+            timestamp: '2025-10-10T14:20:00',
+            icon: 'briefcase',
+            priority: 'normal'
+        },
+        {
+            id: 5,
+            type: 'document',
+            caseId: 6,
+            caseName: 'R v. Williams',
+            description: 'Blood test results received',
+            timestamp: '2025-10-09T11:15:00',
+            icon: 'file-check',
+            priority: 'normal'
+        },
+        {
+            id: 6,
+            type: 'deadline',
+            caseId: 3,
+            caseName: 'R v. Martinez',
+            description: 'Expert report deadline approaching (5 days)',
+            timestamp: '2025-10-09T09:00:00',
+            icon: 'clock',
+            priority: 'medium'
+        },
+        {
+            id: 7,
+            type: 'court',
+            caseId: 5,
+            caseName: 'R v. Patel',
+            description: 'Pre-trial conference scheduled',
+            timestamp: '2025-10-08T15:30:00',
+            icon: 'calendar',
+            priority: 'normal'
+        }
+    ]
 };

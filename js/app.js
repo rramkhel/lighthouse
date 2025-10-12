@@ -6,6 +6,16 @@ Router.add('/dashboard', () => {
     render();
 });
 
+Router.add('/recent-updates', () => {
+    STATE.currentView = 'recent-updates';
+    render();
+});
+
+Router.add('/search', () => {
+    STATE.currentView = 'search';
+    render();
+});
+
 Router.add('/cases', () => {
     STATE.currentView = 'cases';
     render();
@@ -27,6 +37,11 @@ Router.add('/calendar', () => {
     render();
 });
 
+Router.add('/week-planner', () => {
+    STATE.currentView = 'week-planner';
+    render();
+});
+
 Router.add('/progress', () => {
     STATE.currentView = 'progress';
     render();
@@ -37,25 +52,46 @@ Router.add('/trial-prep', () => {
     render();
 });
 
+// Toggle stat card expansion
+function toggleCardExpansion(cardId) {
+    // If clicking the same card, collapse it. Otherwise, expand the new card
+    STATE.expandedCard = STATE.expandedCard === cardId ? null : cardId;
+    render();
+}
+
 // Main render function
 function render() {
     const app = document.getElementById('app');
-    
+
     let content = '';
-    
+
+    // Navigation Sidebar (Left)
+    content += renderNavigation(STATE.currentView);
+
+    // Right Sidebar
+    content += renderRightSidebar();
+
+    // Main content wrapper with margins for both sidebars
+    const leftMargin = STATE.sidebarOpen ? 'ml-64' : 'ml-16';
+    const rightMargin = STATE.rightSidebarOpen ? 'mr-80' : 'mr-12';
+    content += `<div class="${leftMargin} ${rightMargin} transition-all duration-300">`;
+
     // Header
     content += renderHeader();
-    
-    // Navigation
-    content += renderNavigation(STATE.currentView);
-    
+
     // Main content area wrapper
     content += '<main class="max-w-[1800px] mx-auto px-8 py-6">';
-    
+
     // Render appropriate view
     switch(STATE.currentView) {
         case 'dashboard':
             content += renderDashboard();
+            break;
+        case 'recent-updates':
+            content += renderRecentUpdates();
+            break;
+        case 'search':
+            content += renderSearchResultsPage();
             break;
         case 'cases':
             content += renderCases();
@@ -69,6 +105,9 @@ function render() {
         case 'calendar':
             content += renderCalendar();
             break;
+        case 'week-planner':
+            content += renderWeekPlanner();
+            break;
         case 'progress':
             content += renderProgress();
             break;
@@ -78,11 +117,12 @@ function render() {
         default:
             content += renderDashboard();
     }
-    
+
     content += '</main>';
-    
+    content += '</div>'; // Close ml-64 wrapper
+
     app.innerHTML = content;
-    
+
     // Initialize Lucide icons
     if (window.lucide) {
         lucide.createIcons();
@@ -92,4 +132,15 @@ function render() {
 // Initialize app when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     Router.init();
+});
+
+// Close search results when clicking outside
+document.addEventListener('click', (e) => {
+    const searchInput = document.getElementById('globalSearch');
+    if (searchInput && STATE.searchVisible) {
+        // Check if click is outside search area
+        if (!e.target.closest('#globalSearch') && !e.target.closest('.absolute.top-full')) {
+            clearSearch();
+        }
+    }
 });

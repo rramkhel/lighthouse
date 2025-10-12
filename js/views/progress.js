@@ -74,13 +74,13 @@ function renderProgress() {
                         </div>
                         
                         ${milestone.id === 'trial' && !milestone.completed && outstandingDocs.length > 0
-                            ? `<div class="mt-2 text-xs bg-yellow-50 border border-yellow-200 rounded p-2">
-                                <p class="font-semibold text-yellow-800 flex items-center gap-1">
+                            ? `<div class="mt-2 text-xs bg-white border border-gray-300 rounded p-2">
+                                <p class="font-semibold text-gray-900 flex items-center gap-1">
                                     <i data-lucide="alert-circle" class="w-3 h-3"></i>
                                     Blockers:
                                 </p>
-                                <ul class="mt-1 space-y-0.5 text-yellow-700">
-                                    ${outstandingDocs.slice(0, 3).map(doc => 
+                                <ul class="mt-1 space-y-0.5 text-gray-700">
+                                    ${outstandingDocs.slice(0, 3).map(doc =>
                                         `<li>• ${doc.type} from ${doc.recipient} - ${doc.status}</li>`
                                     ).join('')}
                                 </ul>
@@ -98,22 +98,23 @@ function renderProgress() {
         }).join('');
         
         return `
-            <div class="border-l-4 rounded-lg ${color.border} ${color.bg} p-5">
+            <div class="border-l-4 border-blue-500 rounded-lg bg-white p-5 hover:shadow-md transition cursor-pointer"
+                 onclick="showRightSidebarDetail('case', ${caseItem.id}); STATE.rightSidebarOpen = true; render();">
                 <div class="flex justify-between items-start mb-4">
                     <div>
                         <h3 class="font-bold text-gray-900 text-lg">${caseItem.name}</h3>
                         <p class="text-sm text-gray-700 mt-1">${caseItem.accused} • ${caseItem.charges}</p>
                         <div class="flex items-center gap-3 mt-2">
                             <span class="text-xs font-semibold px-2 py-1 rounded ${
-                                caseItem.priority === 'High' 
-                                    ? 'bg-red-100 text-red-800' 
-                                    : caseItem.priority === 'Medium' 
-                                    ? 'bg-orange-100 text-orange-800' 
+                                caseItem.priority === 'High'
+                                    ? 'bg-red-100 text-red-800'
+                                    : caseItem.priority === 'Medium'
+                                    ? 'bg-orange-100 text-orange-800'
                                     : 'bg-gray-100 text-gray-700'
                             }">
                                 ${caseItem.priority} Priority
                             </span>
-                            <span class="text-xs font-semibold px-2 py-1 rounded bg-white text-gray-700">${caseItem.status}</span>
+                            <span class="text-xs font-semibold px-2 py-1 rounded bg-gray-100 text-gray-700">${caseItem.status}</span>
                         </div>
                     </div>
                     <div class="text-right">
@@ -132,23 +133,6 @@ function renderProgress() {
                     ${milestonesHTML}
                 </div>
 
-                <!-- Quick Actions -->
-                <div class="mt-4 pt-4 border-t border-gray-300 flex gap-2">
-                    <button class="text-xs px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-1">
-                        <i data-lucide="calendar" class="w-3 h-3"></i>
-                        Add Court Date
-                    </button>
-                    <button class="text-xs px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50 flex items-center gap-1">
-                        <i data-lucide="file-text" class="w-3 h-3"></i>
-                        Add Document Request
-                    </button>
-                    <button 
-                        onclick="Router.navigate('/case/${caseItem.id}')"
-                        class="text-xs px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50"
-                    >
-                        View Full Details →
-                    </button>
-                </div>
             </div>
         `;
     }).join('');

@@ -1,4 +1,4 @@
-// Header Component
+// Header Component with Search
 
 function renderHeader() {
     return `
@@ -9,7 +9,36 @@ function renderHeader() {
                         <i data-lucide="briefcase" class="w-7 h-7"></i>
                         <h1 class="text-xl font-semibold">Legal Case Management</h1>
                     </div>
-                    <div class="text-sm text-slate-300">Saturday, October 11, 2025</div>
+
+                    <!-- Search Bar -->
+                    <div class="flex items-center gap-6">
+                        <div class="relative">
+                            <div class="relative">
+                                <input
+                                    type="text"
+                                    id="globalSearch"
+                                    placeholder="Search cases, documents..."
+                                    value="${STATE.searchQuery}"
+                                    class="pl-10 pr-10 py-2 w-80 border-2 border-slate-600 bg-slate-700 text-white placeholder-slate-400 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                                    oninput="handleSearchInput(this.value)"
+                                    onkeydown="if(event.key === 'Escape') clearSearch()"
+                                />
+                                <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                                ${STATE.searchQuery ? `
+                                    <button onclick="clearSearch()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white">
+                                        <i data-lucide="x" class="w-4 h-4"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
+
+                            <!-- Search Results Dropdown -->
+                            <div class="search-results-container">
+                                ${renderSearchResults()}
+                            </div>
+                        </div>
+
+                        <div class="text-sm text-slate-300">${STATE.today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</div>
+                    </div>
                 </div>
             </div>
         </header>

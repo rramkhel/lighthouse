@@ -8,6 +8,28 @@
     <style>
         .border-l-3 { border-left-width: 3px; }
         .min-h-24 { min-height: 6rem; }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .slide-down {
+            animation: slideDown 0.3s ease-out;
+        }
+        .stat-card {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -25,16 +47,22 @@
     <!-- Components -->
     <script src="js/components/header.js"></script>
     <script src="js/components/navigation.js"></script>
+    <script src="js/components/rightSidebar.js"></script>
     <script src="js/components/statCard.js"></script>
     <script src="js/components/documentCard.js"></script>
     <script src="js/components/courtEventCard.js"></script>
+    <script src="js/components/recentChanges.js"></script>
+    <script src="js/components/searchResults.js"></script>
     
     <!-- Views/Pages -->
     <script src="js/views/dashboard.js"></script>
+    <script src="js/views/recentUpdates.js"></script>
+    <script src="js/views/searchResultsPage.js"></script>
     <script src="js/views/cases.js"></script>
     <script src="js/views/caseDetail.js"></script>
     <script src="js/views/documents.js"></script>
     <script src="js/views/calendar.js"></script>
+    <script src="js/views/weekPlanner.js"></script>
     <script src="js/views/progress.js"></script>
     <script src="js/views/trialPrep.js"></script>
     

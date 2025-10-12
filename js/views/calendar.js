@@ -19,9 +19,8 @@ function renderCalendar() {
         const isToday = dateStr === '2025-10-11';
         
         const eventsList = events.map(event => {
-            const color = getCaseColor(event.caseId);
             return `
-                <div class="text-xs ${color.bg} ${color.text} px-1 py-0.5 rounded truncate border-l-2 ${color.border}" title="${event.type} - ${event.caseName}">
+                <div class="text-xs text-gray-700 px-1 py-0.5 rounded truncate border-l-2 border-blue-500 bg-white hover:bg-gray-50" title="${event.type} - ${event.caseName}">
                     ${event.time} ${event.type}
                 </div>
             `;
@@ -89,17 +88,17 @@ function renderCalendar() {
                         : `<div class="space-y-3">
                             ${monthEvents.map(event => {
                                 const daysUntil = getDaysUntil(event.date);
-                                const isUrgent = daysUntil === 'Today' || daysUntil === 'Tomorrow' || 
+                                const isUrgent = daysUntil === 'Today' || daysUntil === 'Tomorrow' ||
                                                (typeof daysUntil === 'string' && parseInt(daysUntil) <= 3);
-                                const color = getCaseColor(event.caseId);
-                                
+
                                 return `
-                                    <div class="border-l-4 p-4 rounded ${color.border} ${color.bg}">
+                                    <div class="border-l-4 border-blue-500 p-4 rounded bg-white hover:bg-gray-50 transition cursor-pointer"
+                                         onclick="showRightSidebarDetail('courtDate', ${event.id}); STATE.rightSidebarOpen = true; render();">
                                         <div class="flex justify-between items-start">
                                             <div class="flex-1">
                                                 <div class="flex items-center gap-3">
                                                     <p class="font-semibold text-gray-900">${event.type}</p>
-                                                    <span class="text-xs font-semibold px-2 py-1 rounded ${isUrgent ? 'bg-red-200 text-red-800' : 'bg-gray-200 text-gray-800'}">
+                                                    <span class="text-xs font-semibold px-2 py-1 rounded ${isUrgent ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}">
                                                         ${daysUntil}
                                                     </span>
                                                 </div>
