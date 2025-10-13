@@ -118,8 +118,6 @@ function renderRightSidebarContent(tab) {
 
 function renderRightSidebarSummary() {
     const summary = getDashboardSummary();
-    const upcomingCourtDates = getUpcomingCourtDates().slice(0, 2);
-    const overdueDocuments = getOverdueDocuments().slice(0, 2);
 
     return `
         <div class="space-y-4">
@@ -143,35 +141,53 @@ function renderRightSidebarSummary() {
             <!-- Your Day at a Glance -->
             <div>
                 <h4 class="text-xs font-bold text-gray-700 uppercase mb-3 flex items-center gap-2">
-                    <i data-lucide="sun" class="w-4 h-4"></i>
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
                     Your Day at a Glance
                 </h4>
 
-                <div class="text-xs text-gray-700 space-y-2">
-                    <p>You're managing <strong>${summary.activeCases} active cases</strong> with <strong class="text-red-600">${summary.highPriorityCases} high priority</strong>.</p>
-
-                    ${summary.overdueDocs > 0 ? `
-                        <p class="text-red-600">
-                            <i data-lucide="alert-circle" class="w-3 h-3 inline"></i>
-                            <strong>${summary.overdueDocs} document${summary.overdueDocs === 1 ? '' : 's'}</strong> overdue:
-                            ${overdueDocuments.map(doc => `<span class="cursor-pointer hover:underline" onclick="showRightSidebarDetail('document', ${doc.id})">${doc.type} - ${doc.caseName}</span>`).join(', ')}
-                        </p>
-                    ` : ''}
-
-                    ${summary.upcomingCourt > 0 ? `
-                        <p>
-                            <i data-lucide="calendar" class="w-3 h-3 inline"></i>
-                            <strong>${summary.upcomingCourt} court date${summary.upcomingCourt === 1 ? '' : 's'}</strong> in the next 14 days:
-                            ${upcomingCourtDates.map(court => `<span class="cursor-pointer hover:underline" onclick="showRightSidebarDetail('courtDate', ${court.id})">${court.type} - ${court.caseName}</span>`).join(', ')}
-                        </p>
-                    ` : ''}
-
-                    ${summary.nextDeadline ? `
-                        <p class="text-orange-600">
-                            <i data-lucide="clock" class="w-3 h-3 inline"></i>
-                            Next critical deadline: <strong>${summary.nextDeadline.description}</strong> (${summary.nextDeadline.daysUntil})
-                        </p>
-                    ` : ''}
+                <div class="space-y-3 text-xs text-gray-700">
+                    <p>You're managing <strong>${summary.activeCases} active cases</strong> with <strong class="text-red-600">${summary.highPriorityCases} high priority</strong> matters: ${summary.highPriorityCasesList.map(c => `<span class="font-semibold">${c.name}</span>`).join(', ')}.</p>
+                    <ul class="list-none space-y-2">
+                        ${summary.overdueDocs > 0 ? `
+                            <li class="flex items-start gap-2">
+                                <i data-lucide="alert-circle" class="w-3 h-3 text-red-500 mt-0.5 flex-shrink-0"></i>
+                                <div>
+                                    <div><strong class="text-red-600">${summary.overdueDocs} document${summary.overdueDocs === 1 ? '' : 's'}</strong> overdue and need${summary.overdueDocs === 1 ? 's' : ''} immediate attention:</div>
+                                    <div class="ml-2 mt-1 text-xs space-y-0.5">
+                                        ${summary.overdueDocsList.map(doc => `<div>• ${doc.type} for ${doc.caseName} (due ${doc.date})</div>`).join('')}
+                                    </div>
+                                </div>
+                            </li>
+                        ` : ''}
+                        ${summary.upcomingCourt > 0 ? `
+                            <li class="flex items-start gap-2">
+                                <i data-lucide="calendar" class="w-3 h-3 text-blue-500 mt-0.5 flex-shrink-0"></i>
+                                <div>
+                                    <div><strong>${summary.upcomingCourt} court date${summary.upcomingCourt === 1 ? '' : 's'}</strong> in the next 14 days:</div>
+                                    <div class="ml-2 mt-1 text-xs space-y-0.5">
+                                        ${summary.upcomingCourtList.map(court => `<div>• ${court.caseName} - ${court.type} on ${court.date}</div>`).join('')}
+                                    </div>
+                                </div>
+                            </li>
+                        ` : ''}
+                        ${summary.newUpdates > 0 ? `
+                            <li class="flex items-start gap-2">
+                                <i data-lucide="bell" class="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0"></i>
+                                <div>
+                                    <div><strong>${summary.newUpdates} new update${summary.newUpdates === 1 ? '' : 's'}</strong> since yesterday:</div>
+                                    <div class="ml-2 mt-1 text-xs space-y-0.5">
+                                        ${summary.updatesList.map(update => `<div>• ${update}</div>`).join('')}
+                                    </div>
+                                </div>
+                            </li>
+                        ` : ''}
+                        ${summary.nextDeadline ? `
+                            <li class="flex items-start gap-2">
+                                <i data-lucide="clock" class="w-3 h-3 text-orange-500 mt-0.5 flex-shrink-0"></i>
+                                <span>Next critical deadline: <strong>${summary.nextDeadline.description}</strong> (${summary.nextDeadline.daysUntil})</span>
+                            </li>
+                        ` : ''}
+                    </ul>
                 </div>
             </div>
         </div>

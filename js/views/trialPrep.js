@@ -1,25 +1,161 @@
 // Trial Prep View
 
+// Initialize trial prep state if not exists
+if (!STATE.trialPrepSearch) {
+    STATE.trialPrepSearch = '';
+    STATE.trialPrepSortBy = 'date'; // date, name, priority
+    STATE.trialPrepFilterStatus = 'all'; // all, trial-prep, active, discovery
+    STATE.trialPrepCasesExpanded = true; // collapsible state
+}
+
+function handleTrialPrepSearch(event) {
+    STATE.trialPrepSearch = event.target.value;
+    // Store cursor position before render
+    const cursorPos = event.target.selectionStart;
+    render();
+    // Restore focus and cursor position after render
+    setTimeout(() => {
+        const input = document.querySelector('input[placeholder="Search cases, accused, charges..."]');
+        if (input) {
+            input.focus();
+            input.setSelectionRange(cursorPos, cursorPos);
+        }
+    }, 0);
+}
+
+function handleTrialPrepSort(sortBy) {
+    STATE.trialPrepSortBy = sortBy;
+    render();
+}
+
+function handleTrialPrepFilter(status) {
+    STATE.trialPrepFilterStatus = status;
+    render();
+}
+
+function toggleTrialPrepCases() {
+    STATE.trialPrepCasesExpanded = !STATE.trialPrepCasesExpanded;
+    render();
+}
+
 function renderTrialPrep() {
-    const trialReadyCases = DATA.cases.filter(c => c.status === 'Trial Prep' || c.trialDate);
-    
-    const caseSelectionHTML = trialReadyCases.map(caseItem => `
-        <button
-            onclick="STATE.selectedCase = DATA.cases.find(c => c.id === ${caseItem.id}); render();"
-            class="text-left border-2 rounded p-3 transition ${
-                STATE.selectedCase?.id === caseItem.id 
-                    ? 'border-blue-500 bg-blue-50' 
-                    : 'border-gray-200 hover:border-gray-300'
-            }"
-        >
-            <p class="font-semibold text-gray-900 text-sm">${caseItem.name}</p>
-            <p class="text-xs text-gray-600 mt-0.5">${caseItem.accused}</p>
-            ${caseItem.trialDate 
-                ? `<p class="text-xs text-blue-600 font-semibold mt-1">Trial: ${formatDate(caseItem.trialDate)}</p>`
-                : ''
-            }
-        </button>
-    `).join('');
+    // Get all cases (not just trial prep)
+    let cases = [...DATA.cases];
+
+    // Apply status filter
+    if (STATE.trialPrepFilterStatus !== 'all') {
+        const statusMap = {
+            'trial-prep': 'Trial Prep',
+            'active': 'Active',
+            'discovery': 'Discovery'
+        };
+        cases = cases.filter(c => c.status === statusMap[STATE.trialPrepFilterStatus]);
+    }
+
+    // Apply search filter
+    if (STATE.trialPrepSearch) {
+        const query = STATE.trialPrepSearch.toLowerCase();
+        cases = cases.filter(c =>
+            c.name.toLowerCase().includes(query) ||
+            c.accused.toLowerCase().includes(query) ||
+            c.charges.toLowerCase().includes(query)
+        );
+    }
+
+    // Apply sort
+    cases.sort((a, b) => {
+        if (STATE.trialPrepSortBy === 'date') {
+            // Sort by next court date or trial date
+            const dateA = new Date(a.trialDate || a.nextCourtDate || '9999-12-31');
+            const dateB = new Date(b.trialDate || b.nextCourtDate || '9999-12-31');
+            return dateA - dateB;
+        } else if (STATE.trialPrepSortBy === 'name') {
+            return a.name.localeCompare(b.name);
+        } else if (STATE.trialPrepSortBy === 'priority') {
+            const priorityOrder = { 'High': 0, 'Medium': 1, 'Low': 2 };
+            return priorityOrder[a.priority] - priorityOrder[b.priority];
+        }
+        return 0;
+    });
+
+    const caseSelectionHTML = cases.map(caseItem => {
+        const nextDate = caseItem.trialDate || caseItem.nextCourtDate;
+        const dateObj = nextDate ? new Date(nextDate) : null;
+        const dateType = caseItem.trialDate ? 'Trial' : 'Hearing';
+
+        // Get court date info for this case
+        const courtDate = DATA.courtDates.find(cd =>
+            cd.caseId === caseItem.id &&
+            cd.date === nextDate
+        );
+
+        // Generate consistent random case number based on case id
+        const seed = caseItem.id * 123456;
+        const randomNum = String(seed).padStart(8, '0').slice(0, 8);
+
+        // Format date for left side display
+        const dayOfWeek = dateObj ? dateObj.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase() : '';
+        const dayOfMonth = dateObj ? dateObj.getDate() : '';
+        const month = dateObj ? dateObj.toLocaleDateString('en-US', { month: 'short' }).toUpperCase() : '';
+
+        return `
+        <tr onclick="STATE.selectedCase = DATA.cases.find(c => c.id === ${caseItem.id}); render();">
+            <td class="p-0">
+                <div class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer ${
+                    STATE.selectedCase?.id === caseItem.id ? 'bg-blue-50' : ''
+                }">
+                    <!-- Big Date -->
+                    ${dateObj ? `
+                        <div class="text-center flex-shrink-0" style="min-width: 36px;">
+                            <div class="text-[9px] text-gray-500 uppercase font-semibold tracking-wide">${dayOfWeek}</div>
+                            <div class="text-lg font-semibold text-gray-900 leading-tight">${dayOfMonth}</div>
+                        </div>
+                    ` : `
+                        <div class="text-center flex-shrink-0" style="min-width: 36px;">
+                            <div class="text-[9px] text-gray-400 uppercase font-semibold tracking-wide">--</div>
+                            <div class="text-lg font-semibold text-gray-400 leading-tight">--</div>
+                        </div>
+                    `}
+                    <div class="w-px h-10 bg-gray-200"></div>
+
+                    <!-- Case Info -->
+                    <div class="flex-1 grid grid-cols-3 gap-3">
+                        <!-- Case Name and Number -->
+                        <div>
+                            <div class="flex items-center gap-1.5 mb-0.5">
+                                <i data-lucide="briefcase" class="w-3 h-3 text-gray-400"></i>
+                                <span class="text-xs font-semibold text-gray-900">${caseItem.name}</span>
+                            </div>
+                            <p class="text-[10px] text-gray-500"><span class="font-semibold">No:</span> 2${randomNum}-2p2</p>
+                        </div>
+
+                        <!-- Charges -->
+                        <div>
+                            <div class="flex items-center gap-1.5 mb-0.5">
+                                <i data-lucide="alert-circle" class="w-3 h-3 text-gray-400"></i>
+                                <span class="text-xs font-semibold text-gray-900">Charges</span>
+                            </div>
+                            <p class="text-[10px] text-gray-500">${caseItem.charges}</p>
+                        </div>
+
+                        <!-- Trial Date & Phase -->
+                        <div>
+                            ${dateObj ? `
+                                <div class="flex items-center gap-1.5 mb-0.5">
+                                    <i data-lucide="calendar" class="w-3 h-3 text-gray-400"></i>
+                                    <span class="text-xs font-semibold text-gray-900">${dateType}</span>
+                                </div>
+                                <p class="text-[10px] text-gray-500">${caseItem.name.split(' ')[2]} • ${dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • ${courtDate ? courtDate.time : 'TBD'}</p>
+                            ` : `
+                                <div class="text-xs text-gray-400 italic">No event scheduled</div>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+    `;
+    }).join('');
     
     let trialPrepDocument = '';
     
@@ -178,14 +314,92 @@ function renderTrialPrep() {
             <!-- Case Selection -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200">
                 <div class="px-4 py-3 border-b border-gray-200">
-                    <h2 class="text-lg font-semibold text-gray-900">Select Case for Trial Preparation</h2>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <h2 class="text-lg font-semibold text-gray-900">Trial Preparation Cases</h2>
+                            <span class="text-sm text-gray-600">${cases.length} case${cases.length === 1 ? '' : 's'}</span>
+                        </div>
+                        <button onclick="toggleTrialPrepCases()" class="p-1 hover:bg-gray-100 rounded transition-colors">
+                            <i data-lucide="${STATE.trialPrepCasesExpanded ? 'chevron-up' : 'chevron-down'}" class="w-5 h-5 text-gray-600"></i>
+                        </button>
+                    </div>
                 </div>
-                <div class="p-4">
-                    ${trialReadyCases.length === 0
-                        ? '<p class="text-gray-500 text-center py-8">No cases ready for trial preparation</p>'
-                        : `<div class="grid grid-cols-3 gap-3">${caseSelectionHTML}</div>`
-                    }
-                </div>
+
+                ${STATE.trialPrepCasesExpanded ? `
+                    <!-- Search and Filters -->
+                    <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
+                        <div class="flex items-center gap-4">
+                            <!-- Search -->
+                            <div class="flex-1 relative">
+                                <input
+                                    type="text"
+                                    placeholder="Search cases, accused, charges..."
+                                    value="${STATE.trialPrepSearch}"
+                                    oninput="handleTrialPrepSearch(event)"
+                                    class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                                />
+                                <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            </div>
+
+                            <!-- Sort -->
+                            <div class="flex items-center gap-2">
+                                <label class="text-sm text-gray-600 font-medium">Sort:</label>
+                                <select
+                                    onchange="handleTrialPrepSort(this.value)"
+                                    class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                >
+                                    <option value="date" ${STATE.trialPrepSortBy === 'date' ? 'selected' : ''}>Date</option>
+                                    <option value="name" ${STATE.trialPrepSortBy === 'name' ? 'selected' : ''}>Name</option>
+                                    <option value="priority" ${STATE.trialPrepSortBy === 'priority' ? 'selected' : ''}>Priority</option>
+                                </select>
+                            </div>
+
+                            <!-- Filter -->
+                            <div class="flex items-center gap-2">
+                                <label class="text-sm text-gray-600 font-medium">Status:</label>
+                                <select
+                                    onchange="handleTrialPrepFilter(this.value)"
+                                    class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                >
+                                    <option value="all" ${STATE.trialPrepFilterStatus === 'all' ? 'selected' : ''}>All</option>
+                                    <option value="trial-prep" ${STATE.trialPrepFilterStatus === 'trial-prep' ? 'selected' : ''}>Trial Prep</option>
+                                    <option value="active" ${STATE.trialPrepFilterStatus === 'active' ? 'selected' : ''}>Active</option>
+                                    <option value="discovery" ${STATE.trialPrepFilterStatus === 'discovery' ? 'selected' : ''}>Discovery</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-4">
+                        ${cases.length === 0
+                            ? '<p class="text-gray-500 text-center py-8">No cases found</p>'
+                            : `
+                            <table class="w-full">
+                                <thead>
+                                    <tr>
+                                        <th class="pb-2">
+                                            <div class="flex items-center gap-3 px-2">
+                                                <div class="text-center flex-shrink-0" style="min-width: 36px;">
+                                                    <span class="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Date</span>
+                                                </div>
+                                                <div class="w-px h-4 bg-gray-200"></div>
+                                                <div class="flex-1 grid grid-cols-3 gap-3">
+                                                    <span class="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Case</span>
+                                                    <span class="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Charges</span>
+                                                    <span class="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Next Event</span>
+                                                </div>
+                                            </div>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody class="space-y-2">
+                                    ${caseSelectionHTML}
+                                </tbody>
+                            </table>
+                            `
+                        }
+                    </div>
+                ` : ''}
             </div>
 
             <!-- Trial Prep Document -->
