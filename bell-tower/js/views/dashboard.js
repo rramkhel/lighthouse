@@ -228,55 +228,72 @@ function renderSelectedDateDetails() {
     `;
 }
 
+// Get upcoming bail hearing dates
+function getUpcomingBailHearings() {
+    return DATA.bailHearings.map(dateEntry => {
+        const totalCases = dateEntry.cities.reduce((sum, city) => sum + city.cases.length, 0);
+        return {
+            date: dateEntry.date,
+            cities: dateEntry.cities.map(c => c.name),
+            caseCount: totalCases
+        };
+    });
+}
+
+function renderBailHearingCard(hearing) {
+    const date = new Date(hearing.date + 'T00:00:00');
+    const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+    const dayNum = date.getDate();
+
+    return `
+        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer" onclick="Router.navigate('/bail-hearing')">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-amber-100 rounded-lg flex flex-col items-center justify-center">
+                    <span class="text-xs text-amber-600 font-medium">${dayName}</span>
+                    <span class="text-lg font-bold text-amber-700">${dayNum}</span>
+                </div>
+                <div>
+                    <p class="font-medium text-gray-900">${hearing.cities.slice(0, 2).join(', ')}${hearing.cities.length > 2 ? ` +${hearing.cities.length - 2}` : ''}</p>
+                    <p class="text-sm text-gray-500">${hearing.caseCount} ${hearing.caseCount === 1 ? 'case' : 'cases'}</p>
+                </div>
+            </div>
+            <i data-lucide="chevron-right" class="w-5 h-5 text-gray-400"></i>
+        </div>
+    `;
+}
+
 function renderDashboard() {
-    const upcomingDays = getUpcomingCourtDays();
-    const unassignedCases = getUnassignedCases();
-    const highPriorityCases = unassignedCases.filter(c => c.priority === 'High');
+    const upcomingHearings = getUpcomingBailHearings();
+    const totalCases = upcomingHearings.reduce((sum, h) => sum + h.caseCount, 0);
+    const pendingCases = DATA.bailHearings.flatMap(d => d.cities.flatMap(c => c.cases)).filter(c => c.bailResult === 'Pending').length;
 
     return `
         <div class="space-y-8">
             <!-- Page Header -->
             <div>
                 <h2 class="text-2xl font-bold text-gray-900">Scheduling Dashboard</h2>
-                <p class="text-gray-500 mt-1">Overview of court days and pending case assignments</p>
+                <p class="text-gray-500 mt-1">Overview of bail hearings and case schedules</p>
             </div>
 
             <!-- Stats Row -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                ${renderStatCard('Upcoming Court Days', upcomingDays.length, 'calendar', 'blue')}
-                ${renderStatCard('Unassigned Cases', unassignedCases.length, 'briefcase', 'amber')}
-                ${renderStatCard('High Priority', highPriorityCases.length, 'alert-triangle', 'red')}
-                ${renderStatCard('Total Assignments', DATA.caseAssignments.length, 'check-circle', 'green')}
+                ${renderStatCard('Hearing Dates', upcomingHearings.length, 'calendar', 'blue')}
+                ${renderStatCard('Total Cases', totalCases, 'briefcase', 'amber')}
+                ${renderStatCard('Pending', pendingCases, 'clock', 'red')}
+                ${renderStatCard('Cities', new Set(DATA.bailHearings.flatMap(d => d.cities.map(c => c.name))).size, 'map-pin', 'green')}
             </div>
 
-            <!-- Main Content Grid -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <!-- Upcoming Court Days -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <div class="flex items-center justify-between mb-6">
-                        <h3 class="text-lg font-semibold text-gray-900">Upcoming Court Days</h3>
-                        <button onclick="Router.navigate('/schedule')" class="text-amber-600 hover:text-amber-700 text-sm font-medium">
-                            View All
-                        </button>
-                    </div>
-                    <div class="space-y-4">
-                        ${upcomingDays.slice(0, 5).map(day => renderCourtDayCard(day)).join('')}
-                        ${upcomingDays.length === 0 ? '<p class="text-gray-500 text-center py-8">No upcoming court days</p>' : ''}
-                    </div>
+            <!-- Upcoming Bail Hearings -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-lg font-semibold text-gray-900">Upcoming Bail Hearings</h3>
+                    <button onclick="Router.navigate('/bail-hearing')" class="text-amber-600 hover:text-amber-700 text-sm font-medium">
+                        View All
+                    </button>
                 </div>
-
-                <!-- Cases Pending Assignment -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <div class="flex items-center justify-between mb-6">
-                        <h3 class="text-lg font-semibold text-gray-900">Cases Pending Assignment</h3>
-                        <button onclick="Router.navigate('/assign')" class="text-amber-600 hover:text-amber-700 text-sm font-medium">
-                            Assign Cases
-                        </button>
-                    </div>
-                    <div class="space-y-3">
-                        ${unassignedCases.slice(0, 6).map(c => renderCaseCard(c)).join('')}
-                        ${unassignedCases.length === 0 ? '<p class="text-gray-500 text-center py-8">All cases are assigned</p>' : ''}
-                    </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    ${upcomingHearings.slice(0, 6).map(hearing => renderBailHearingCard(hearing)).join('')}
+                    ${upcomingHearings.length === 0 ? '<p class="text-gray-500 text-center py-8 col-span-3">No upcoming bail hearings</p>' : ''}
                 </div>
             </div>
 
@@ -309,50 +326,4 @@ function renderStatCard(label, value, icon, color) {
     `;
 }
 
-function renderCourtDayCard(day) {
-    const utilization = getCourtDayUtilization(day.id);
-    const capacityColor = getCapacityColor(utilization.percentage);
-
-    return `
-        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer" onclick="Router.navigate('/schedule')">
-            <div class="flex items-center gap-4">
-                <div class="w-12 h-12 bg-amber-100 rounded-lg flex flex-col items-center justify-center">
-                    <span class="text-xs text-amber-600 font-medium">${new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}</span>
-                    <span class="text-lg font-bold text-amber-700">${new Date(day.date).getDate()}</span>
-                </div>
-                <div>
-                    <p class="font-medium text-gray-900">Courtroom ${day.courtroom}</p>
-                    <p class="text-sm text-gray-500">${day.judge} - ${day.type}</p>
-                </div>
-            </div>
-            <div class="text-right">
-                <p class="text-sm font-medium ${capacityColor.text}">${utilization.assigned}/${utilization.capacity}</p>
-                <div class="w-20 h-2 bg-gray-200 rounded-full mt-1">
-                    <div class="h-full ${capacityColor.bg} rounded-full capacity-bar" style="width: ${utilization.percentage}%"></div>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-function renderCaseCard(caseData) {
-    const priorityColor = getPriorityColor(caseData.priority);
-    const typeColor = getCaseTypeColor(caseData.type);
-
-    return `
-        <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:border-amber-300 transition-colors cursor-pointer" onclick="Router.navigate('/assign')">
-            <div>
-                <div class="flex items-center gap-2 mb-1">
-                    <span class="font-medium text-gray-900">${caseData.caseNumber}</span>
-                    <span class="px-2 py-0.5 text-xs rounded-full ${priorityColor.bg} ${priorityColor.text}">${caseData.priority}</span>
-                </div>
-                <p class="text-sm text-gray-600">${caseData.name}</p>
-            </div>
-            <div class="flex items-center gap-2">
-                <span class="px-2 py-1 text-xs rounded ${typeColor.bg} ${typeColor.text}">${caseData.type}</span>
-                <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
-            </div>
-        </div>
-    `;
-}
 
