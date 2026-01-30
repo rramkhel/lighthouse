@@ -274,14 +274,6 @@ function renderDashboard() {
                 </div>
             </div>
 
-            <!-- Workload Summary -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-6">Capacity Overview</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                    ${upcomingDays.slice(0, 5).map(day => renderCapacityCard(day)).join('')}
-                </div>
-            </div>
-
             <!-- Bail Hearing Calendar -->
             ${renderDashboardCalendar()}
         </div>
@@ -358,23 +350,3 @@ function renderCaseCard(caseData) {
     `;
 }
 
-function renderCapacityCard(day) {
-    const utilization = getCourtDayUtilization(day.id);
-    const capacityColor = getCapacityColor(utilization.percentage);
-
-    return `
-        <div class="bg-gray-50 rounded-lg p-4 text-center">
-            <p class="text-sm font-medium text-gray-900">${formatDate(day.date)}</p>
-            <p class="text-xs text-gray-500 mb-3">Room ${day.courtroom}</p>
-            <div class="relative w-16 h-16 mx-auto mb-2">
-                <svg class="w-16 h-16 transform -rotate-90">
-                    <circle cx="32" cy="32" r="28" stroke="#e5e7eb" stroke-width="6" fill="none"/>
-                    <circle cx="32" cy="32" r="28" stroke="${utilization.percentage >= 90 ? '#ef4444' : utilization.percentage >= 70 ? '#f59e0b' : '#22c55e'}" stroke-width="6" fill="none"
-                        stroke-dasharray="${utilization.percentage * 1.76} 176" stroke-linecap="round"/>
-                </svg>
-                <span class="absolute inset-0 flex items-center justify-center text-sm font-bold text-gray-900">${utilization.percentage}%</span>
-            </div>
-            <p class="text-xs text-gray-500">${utilization.assigned} of ${utilization.capacity}</p>
-        </div>
-    `;
-}
