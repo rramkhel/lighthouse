@@ -1,12 +1,13 @@
 // Bell Tower Utility Functions
 
 // Format date for display
-function formatDate(dateString) {
-    const date = new Date(dateString);
+function formatDate(dateStr) {
+    const date = new Date(dateStr + 'T00:00:00');
     return date.toLocaleDateString('en-US', {
         weekday: 'short',
         month: 'short',
-        day: 'numeric'
+        day: 'numeric',
+        year: 'numeric'
     });
 }
 

@@ -5,6 +5,16 @@ if (!STATE.expandedBailCases) {
     STATE.expandedBailCases = new Set();
 }
 
+// Move modal state
+if (!STATE.moveModal) {
+    STATE.moveModal = {
+        open: false,
+        caseId: null,
+        currentDate: null,
+        currentCity: null
+    };
+}
+
 function toggleBailCase(caseId) {
     if (STATE.expandedBailCases.has(caseId)) {
         STATE.expandedBailCases.delete(caseId);
@@ -12,6 +22,224 @@ function toggleBailCase(caseId) {
         STATE.expandedBailCases.add(caseId);
     }
     render();
+}
+
+// Move modal functions
+function openMoveModal(caseId, currentDate, currentCity) {
+    STATE.moveModal = {
+        open: true,
+        caseId: caseId,
+        currentDate: currentDate,
+        currentCity: currentCity
+    };
+    render();
+}
+
+function closeMoveModal() {
+    STATE.moveModal = {
+        open: false,
+        caseId: null,
+        currentDate: null,
+        currentCity: null
+    };
+    render();
+}
+
+function getAvailableCities() {
+    const cities = new Set();
+    DATA.bailHearings.forEach(dateEntry => {
+        dateEntry.cities.forEach(city => {
+            cities.add(city.name);
+        });
+    });
+    return Array.from(cities).sort();
+}
+
+function findCaseById(caseId) {
+    for (const dateEntry of DATA.bailHearings) {
+        for (const city of dateEntry.cities) {
+            const caseData = city.cases.find(c => c.id === caseId);
+            if (caseData) {
+                return { caseData, date: dateEntry.date, city: city.name };
+            }
+        }
+    }
+    return null;
+}
+
+function moveCase(caseId, fromDate, fromCity, toDate, toCity) {
+    // If nothing changed, just close modal
+    if (fromDate === toDate && fromCity === toCity) {
+        closeMoveModal();
+        return;
+    }
+
+    // Find and remove case from current location
+    let movedCase = null;
+    for (const dateEntry of DATA.bailHearings) {
+        if (dateEntry.date === fromDate) {
+            for (const city of dateEntry.cities) {
+                if (city.name === fromCity) {
+                    const caseIndex = city.cases.findIndex(c => c.id === caseId);
+                    if (caseIndex > -1) {
+                        movedCase = city.cases.splice(caseIndex, 1)[0];
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    if (!movedCase) {
+        closeMoveModal();
+        return;
+    }
+
+    // Add move record to case's moveHistory
+    if (!movedCase.moveHistory) {
+        movedCase.moveHistory = [];
+    }
+    movedCase.moveHistory.push({
+        fromDate: fromDate,
+        fromCity: fromCity,
+        toDate: toDate,
+        toCity: toCity,
+        movedAt: new Date().toISOString()
+    });
+
+    // Find or create target date entry
+    let targetDateEntry = DATA.bailHearings.find(d => d.date === toDate);
+    if (!targetDateEntry) {
+        targetDateEntry = { date: toDate, cities: [] };
+        DATA.bailHearings.push(targetDateEntry);
+        // Sort dates chronologically
+        DATA.bailHearings.sort((a, b) => new Date(a.date) - new Date(b.date));
+    }
+
+    // Find or create target city entry
+    let targetCity = targetDateEntry.cities.find(c => c.name === toCity);
+    if (!targetCity) {
+        targetCity = { name: toCity, cases: [] };
+        targetDateEntry.cities.push(targetCity);
+        // Sort cities alphabetically
+        targetDateEntry.cities.sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    // Add case to new location
+    targetCity.cases.push(movedCase);
+
+    // Clean up empty city/date entries
+    DATA.bailHearings.forEach(dateEntry => {
+        dateEntry.cities = dateEntry.cities.filter(city => city.cases.length > 0);
+    });
+    DATA.bailHearings = DATA.bailHearings.filter(dateEntry => dateEntry.cities.length > 0);
+
+    closeMoveModal();
+}
+
+function handleMoveSubmit(event) {
+    event.preventDefault();
+    const form = event.target;
+    const toDate = form.newDate.value;
+    const toCity = form.newCity.value.trim();
+
+    if (!toDate || !toCity) {
+        alert('Please enter both date and city');
+        return;
+    }
+
+    moveCase(
+        STATE.moveModal.caseId,
+        STATE.moveModal.currentDate,
+        STATE.moveModal.currentCity,
+        toDate,
+        toCity
+    );
+}
+
+function renderMoveModal() {
+    if (!STATE.moveModal.open) return '';
+
+    const caseInfo = findCaseById(STATE.moveModal.caseId);
+    if (!caseInfo) return '';
+
+    const { caseData } = caseInfo;
+    const cities = getAvailableCities();
+    const moveHistory = caseData.moveHistory || [];
+
+    return `
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onclick="closeMoveModal()">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-md" onclick="event.stopPropagation()">
+                <!-- Header -->
+                <div class="bg-amber-500 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+                    <div>
+                        <h3 class="font-semibold text-lg">Move Case</h3>
+                        <p class="text-amber-100 text-sm">${caseData.styleOfCause}</p>
+                    </div>
+                    <button onclick="closeMoveModal()" class="text-white hover:text-amber-200">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <!-- Current Location -->
+                <div class="px-6 py-4 bg-slate-50 border-b border-slate-200">
+                    <p class="text-xs text-slate-500 uppercase tracking-wide mb-2">Current Location</p>
+                    <div class="flex items-center gap-4 text-sm">
+                        <span class="flex items-center gap-1.5">
+                            <i data-lucide="calendar" class="w-4 h-4 text-slate-400"></i>
+                            ${formatDate(STATE.moveModal.currentDate)}
+                        </span>
+                        <span class="flex items-center gap-1.5">
+                            <i data-lucide="map-pin" class="w-4 h-4 text-slate-400"></i>
+                            ${STATE.moveModal.currentCity}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Form -->
+                <form onsubmit="handleMoveSubmit(event)" class="px-6 py-4 space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">New Date</label>
+                        <input type="date" name="newDate" value="${STATE.moveModal.currentDate}"
+                               class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">New City</label>
+                        <input type="text" name="newCity" value="${STATE.moveModal.currentCity}" list="cityList"
+                               class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                               placeholder="Enter city name">
+                        <datalist id="cityList">
+                            ${cities.map(city => `<option value="${city}">`).join('')}
+                        </datalist>
+                    </div>
+
+                    ${moveHistory.length > 0 ? `
+                        <div class="pt-2">
+                            <p class="text-xs text-slate-500 mb-2">Previous dates</p>
+                            <div class="space-y-1">
+                                ${[...moveHistory].reverse().map(move => `
+                                    <p class="text-xs text-slate-400">${formatDate(move.fromDate)} · ${move.fromCity}</p>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <!-- Actions -->
+                    <div class="flex justify-end gap-3 pt-4 border-t border-slate-200">
+                        <button type="button" onclick="closeMoveModal()"
+                                class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                                class="px-4 py-2 bg-amber-500 text-white hover:bg-amber-600 rounded-lg transition-colors">
+                            Move Case
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
 }
 
 function renderBailHearing() {
@@ -36,14 +264,15 @@ function renderBailHearing() {
         }
 
         const isExpanded = STATE.expandedBailCases.has(row.caseData.id);
+        const hasMoveHistory = row.caseData.moveHistory && row.caseData.moveHistory.length > 0;
 
         // Main row
         tableRows += `
             <tr class="hover:bg-slate-50 ${borderClass}">
-                <td class="px-4 py-3 font-medium text-slate-900 align-top w-36">
+                <td class="px-4 py-3 font-medium text-slate-900 align-top w-44 whitespace-nowrap">
                     ${row.showDate ? formatDate(row.date) : ''}
                 </td>
-                <td class="px-4 py-3 font-medium text-slate-600 align-top w-28">
+                <td class="px-4 py-3 font-medium text-slate-600 align-top w-40 whitespace-nowrap">
                     ${row.showCity ? row.city : ''}
                 </td>
                 <td class="px-4 py-3">
@@ -52,10 +281,18 @@ function renderBailHearing() {
                         <i data-lucide="${isExpanded ? 'chevron-down' : 'chevron-right'}"
                            class="w-4 h-4 text-slate-400"></i>
                         <span class="font-medium">${row.caseData.styleOfCause}</span>
+                        ${hasMoveHistory ? `
+                            <span class="inline-flex items-center gap-1.5 text-xs text-amber-600">
+                                <span class="w-2 h-2 bg-amber-400 rounded-full"></span>
+                                moved
+                            </span>
+                        ` : ''}
                     </button>
                 </td>
                 <td class="px-4 py-3 text-right w-24">
-                    <button class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded" title="Move">
+                    <button onclick="openMoveModal(${row.caseData.id}, '${row.date}', '${row.city}')"
+                            class="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded transition-colors"
+                            title="Move to different date/city">
                         <i data-lucide="arrow-right-left" class="w-4 h-4"></i>
                     </button>
                     <button class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded" title="Edit">
@@ -101,6 +338,7 @@ function renderBailHearing() {
 
             <p class="text-center text-sm text-slate-400">Click on a case to expand details</p>
         </div>
+        ${renderMoveModal()}
     `;
 }
 
@@ -116,6 +354,8 @@ function renderBailCaseDetails(caseData) {
             </div>
         `;
     }
+
+    const moveHistory = caseData.moveHistory || [];
 
     return `
         <div class="bg-slate-50 border border-slate-200 rounded-md p-4 text-sm ml-6">
@@ -150,6 +390,23 @@ function renderBailCaseDetails(caseData) {
                 <div class="text-slate-500 font-medium">Presiding Justice:</div>
                 <div>${caseData.presidingJustice}</div>
             </div>
+
+            ${moveHistory.length > 0 ? `
+                <div class="border-t border-slate-200 pt-3 mt-3">
+                    <div class="flex items-center text-xs text-slate-400 mb-2">
+                        <span>Scheduling History</span>
+                        <span class="ml-auto">Moved</span>
+                    </div>
+                    <div class="space-y-1.5">
+                        ${[...moveHistory].reverse().map(move => `
+                            <div class="flex items-center text-xs text-slate-500">
+                                <span>${formatDate(move.toDate)} · ${move.toCity}</span>
+                                <span class="ml-auto text-slate-400">${formatDate(move.movedAt.split('T')[0])}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
         </div>
     `;
 }

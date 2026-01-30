@@ -50,7 +50,7 @@ const DATA = {
             date: '2026-05-14',
             cities: [
                 {
-                    name: 'Edmonton',
+                    name: 'High Level',
                     cases: [
                         {
                             id: 1,
@@ -69,7 +69,23 @@ const DATA = {
                                 reasoning: 'Flight risk due to prior FTA; public safety concerns'
                             },
                             bailResult: 'Bail Denied - secondary grounds',
-                            presidingJustice: 'Justice Ambrose'
+                            presidingJustice: 'Justice Ambrose',
+                            moveHistory: [
+                                {
+                                    fromDate: '2026-05-05',
+                                    fromCity: 'Chateh',
+                                    toDate: '2026-05-10',
+                                    toCity: 'Fort Vermillion',
+                                    movedAt: '2026-01-10T14:30:00'
+                                },
+                                {
+                                    fromDate: '2026-05-10',
+                                    fromCity: 'Fort Vermillion',
+                                    toDate: '2026-05-14',
+                                    toCity: 'High Level',
+                                    movedAt: '2026-01-15T09:15:00'
+                                }
+                            ]
                         },
                         {
                             id: 2,
@@ -84,12 +100,13 @@ const DATA = {
                                 reasoning: 'Substantial likelihood of reoffending'
                             },
                             bailResult: 'Pending',
-                            presidingJustice: '---'
+                            presidingJustice: '---',
+                            moveHistory: []
                         }
                     ]
                 },
                 {
-                    name: 'Calgary',
+                    name: 'Peace River',
                     cases: [
                         {
                             id: 3,
@@ -104,7 +121,16 @@ const DATA = {
                                 reasoning: 'Low risk, community ties'
                             },
                             bailResult: 'Pending',
-                            presidingJustice: '---'
+                            presidingJustice: '---',
+                            moveHistory: [
+                                {
+                                    fromDate: '2026-05-12',
+                                    fromCity: 'High Level',
+                                    toDate: '2026-05-14',
+                                    toCity: 'Peace River',
+                                    movedAt: '2026-01-18T11:00:00'
+                                }
+                            ]
                         },
                         {
                             id: 4,
@@ -123,7 +149,8 @@ const DATA = {
                                 reasoning: 'Pattern of fraudulent behavior'
                             },
                             bailResult: 'Pending',
-                            presidingJustice: '---'
+                            presidingJustice: '---',
+                            moveHistory: []
                         }
                     ]
                 }
@@ -133,7 +160,7 @@ const DATA = {
             date: '2026-05-18',
             cities: [
                 {
-                    name: 'Edmonton',
+                    name: 'High Level',
                     cases: [
                         {
                             id: 5,
@@ -148,7 +175,8 @@ const DATA = {
                                 reasoning: 'First offense, stable employment'
                             },
                             bailResult: 'Pending',
-                            presidingJustice: '---'
+                            presidingJustice: '---',
+                            moveHistory: []
                         },
                         {
                             id: 6,
@@ -167,12 +195,13 @@ const DATA = {
                                 reasoning: 'Escalating violence; multiple breaches'
                             },
                             bailResult: 'Pending',
-                            presidingJustice: '---'
+                            presidingJustice: '---',
+                            moveHistory: []
                         }
                     ]
                 },
                 {
-                    name: 'Red Deer',
+                    name: 'Fort Vermillion',
                     cases: [
                         {
                             id: 7,
@@ -187,7 +216,8 @@ const DATA = {
                                 reasoning: 'Schedule I substance; quantity indicates trafficking'
                             },
                             bailResult: 'Pending',
-                            presidingJustice: '---'
+                            presidingJustice: '---',
+                            moveHistory: []
                         },
                         {
                             id: 8,
@@ -202,7 +232,8 @@ const DATA = {
                                 reasoning: 'Violence with weapon; breach while on release'
                             },
                             bailResult: 'Pending',
-                            presidingJustice: '---'
+                            presidingJustice: '---',
+                            moveHistory: []
                         }
                     ]
                 }
