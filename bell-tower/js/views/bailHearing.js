@@ -20,6 +20,16 @@ if (STATE.editingCaseId === undefined) {
     STATE.editingCaseId = null;
 }
 
+// Add modal state
+if (!STATE.addModal) {
+    STATE.addModal = { open: false };
+}
+
+// Track next available ID for new cases
+if (!STATE.nextCaseId) {
+    STATE.nextCaseId = 100;
+}
+
 function toggleBailCase(caseId) {
     // Prevent collapse while editing
     if (STATE.editingCaseId === caseId) {
@@ -247,10 +257,216 @@ function parseCrownPosition(text) {
 
 // Escape key handler
 document.addEventListener('keydown', function(event) {
-    if (event.key === 'Escape' && STATE.editingCaseId !== null) {
-        cancelEdit();
+    if (event.key === 'Escape') {
+        if (STATE.editingCaseId !== null) {
+            cancelEdit();
+        } else if (STATE.addModal.open) {
+            closeAddModal();
+        }
     }
 });
+
+// Add modal functions
+function openAddModal() {
+    STATE.addModal = { open: true };
+    render();
+}
+
+function closeAddModal() {
+    STATE.addModal = { open: false };
+    render();
+}
+
+function addNewCase(newCaseData) {
+    const { date, city, ...caseFields } = newCaseData;
+
+    const newCase = {
+        id: STATE.nextCaseId,
+        ...caseFields,
+        moveHistory: []
+    };
+
+    const newId = STATE.nextCaseId;
+    STATE.nextCaseId++;
+
+    // Find or create target date entry
+    let targetDateEntry = DATA.bailHearings.find(d => d.date === date);
+    if (!targetDateEntry) {
+        targetDateEntry = { date: date, cities: [] };
+        DATA.bailHearings.push(targetDateEntry);
+        DATA.bailHearings.sort((a, b) => new Date(a.date) - new Date(b.date));
+    }
+
+    // Find or create target city entry
+    let targetCityEntry = targetDateEntry.cities.find(c => c.name === city);
+    if (!targetCityEntry) {
+        targetCityEntry = { name: city, cases: [] };
+        targetDateEntry.cities.push(targetCityEntry);
+        targetDateEntry.cities.sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    // Add the new case
+    targetCityEntry.cases.push(newCase);
+
+    // Auto-expand the new case
+    STATE.expandedBailCases.add(newId);
+
+    closeAddModal();
+}
+
+function handleAddCaseSubmit() {
+    const date = document.getElementById('addCaseDate').value;
+    const city = document.getElementById('addCaseCity').value.trim();
+    const styleOfCause = document.getElementById('addCaseStyleOfCause').value.trim();
+    const previousReleases = document.getElementById('addCasePreviousReleases').value.trim();
+    const facts = document.getElementById('addCaseFacts').value.trim();
+    const criminalRecord = document.getElementById('addCaseCriminalRecord').value.trim();
+    const additionalChargesText = document.getElementById('addCaseAdditionalCharges').value.trim();
+    const crownPositionText = document.getElementById('addCaseCrownPosition').value.trim();
+    const bailResult = document.getElementById('addCaseBailResult').value;
+    const presidingJustice = document.getElementById('addCasePresidingJustice').value.trim();
+
+    if (!date || !city) {
+        alert('Please enter both date and city');
+        return;
+    }
+
+    if (!styleOfCause) {
+        alert('Please enter a Style of Cause');
+        return;
+    }
+
+    // Parse additional charges
+    let additionalCharges = null;
+    if (additionalChargesText) {
+        additionalCharges = parseAdditionalCharges(additionalChargesText);
+    }
+
+    // Parse crown position
+    const crownPosition = parseCrownPosition(crownPositionText);
+
+    addNewCase({
+        date,
+        city,
+        styleOfCause,
+        presentDate: date,
+        previousReleases: previousReleases || 'No prior releases',
+        facts: facts || '---',
+        criminalRecord: criminalRecord || null,
+        additionalCharges,
+        crownPosition,
+        bailResult,
+        presidingJustice: presidingJustice || '---'
+    });
+}
+
+function renderAddModal() {
+    if (!STATE.addModal.open) return '';
+
+    const availableCities = getAvailableCities();
+    const today = new Date().toISOString().split('T')[0];
+
+    return `
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onclick="if(event.target === this) closeAddModal()">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden max-h-[90vh] flex flex-col">
+                <div class="bg-amber-500 text-white px-6 py-4 flex justify-between items-start">
+                    <div>
+                        <h3 class="text-lg font-semibold">Add New Case</h3>
+                        <p class="text-amber-100 text-sm mt-1">Enter case details below</p>
+                    </div>
+                    <button onclick="closeAddModal()" class="p-1 hover:bg-amber-400 rounded">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <div class="p-6 space-y-4 overflow-y-auto flex-1">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1 block">Hearing Date</label>
+                            <input type="date" id="addCaseDate" value="${today}"
+                                   class="px-3 py-2 border border-slate-300 rounded-lg text-sm w-full focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1 block">City</label>
+                            <input type="text" id="addCaseCity" list="addCityOptions" placeholder="Type or select a city"
+                                   class="px-3 py-2 border border-slate-300 rounded-lg text-sm w-full focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none">
+                            <datalist id="addCityOptions">
+                                ${availableCities.map(city => `<option value="${city}">`).join('')}
+                            </datalist>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1 block">Style of Cause</label>
+                        <input type="text" id="addCaseStyleOfCause" placeholder="R. v. [Name]"
+                               class="px-3 py-2 border border-slate-300 rounded-lg text-sm w-full focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none">
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1 block">Previous Releases</label>
+                        <textarea id="addCasePreviousReleases" rows="2" placeholder="Released [date] by [Justice]: [conditions]..."
+                                  class="px-3 py-2 border border-slate-300 rounded-lg text-sm w-full focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none resize-y"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1 block">Facts</label>
+                        <textarea id="addCaseFacts" rows="2" placeholder="On [date], the accused allegedly..."
+                                  class="px-3 py-2 border border-slate-300 rounded-lg text-sm w-full focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none resize-y"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1 block">Relevant Criminal Record</label>
+                        <textarea id="addCaseCriminalRecord" rows="2" placeholder="Prior convictions or leave blank for none"
+                                  class="px-3 py-2 border border-slate-300 rounded-lg text-sm w-full focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none resize-y"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1 block">Additional Charges</label>
+                        <textarea id="addCaseAdditionalCharges" rows="3" placeholder="Info #...\nCharges...\nBail: ..."
+                                  class="px-3 py-2 border border-slate-300 rounded-lg text-sm w-full focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none resize-y"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1 block">Crown Position on Bail</label>
+                        <textarea id="addCaseCrownPosition" rows="3" placeholder="Grounds (e.g., Opposed on Secondary Grounds)\nReasoning..."
+                                  class="px-3 py-2 border border-slate-300 rounded-lg text-sm w-full focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none resize-y"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1 block">Result of Bail Hearing</label>
+                        <select id="addCaseBailResult" class="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none">
+                            <option selected>Pending</option>
+                            <option>Released – undertaking</option>
+                            <option>Released – recognizance (no surety)</option>
+                            <option>Released – recognizance with surety</option>
+                            <option>Released – cash deposit</option>
+                            <option>Bail Denied – primary grounds</option>
+                            <option>Bail Denied – secondary grounds</option>
+                            <option>Bail Denied – tertiary grounds</option>
+                            <option>Bail Denied – reverse onus not met</option>
+                            <option>Adjourned – new date set</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1 block">Presiding Justice</label>
+                        <input type="text" id="addCasePresidingJustice" placeholder="e.g., Justice Campbell"
+                               class="px-3 py-2 border border-slate-300 rounded-lg text-sm w-full focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none">
+                    </div>
+                </div>
+
+                <div class="flex gap-3 p-6 border-t border-slate-200 bg-slate-50">
+                    <button onclick="closeAddModal()" class="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-white font-medium">
+                        Cancel
+                    </button>
+                    <button onclick="handleAddCaseSubmit()" class="flex-1 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 font-medium">
+                        Add Case
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
 
 function renderMoveModal() {
     if (!STATE.moveModal.open) return '';
@@ -415,7 +631,14 @@ function renderBailHearing() {
     return `
         <div class="space-y-4">
             <div class="flex justify-between items-center">
-                <h2 class="text-lg font-semibold text-gray-900">Bail Hearing Schedule</h2>
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-900">Bail Hearing Schedule</h2>
+                    <p class="text-sm text-slate-500 mt-1">Click a case to expand details</p>
+                </div>
+                <button onclick="openAddModal()" class="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 font-medium text-sm transition-colors">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    Add Case
+                </button>
             </div>
 
             <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
@@ -434,9 +657,9 @@ function renderBailHearing() {
                 </table>
             </div>
 
-            <p class="text-center text-sm text-slate-400">Click on a case to expand details</p>
         </div>
         ${renderMoveModal()}
+        ${renderAddModal()}
     `;
 }
 
