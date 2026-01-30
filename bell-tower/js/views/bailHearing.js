@@ -15,7 +15,16 @@ if (!STATE.moveModal) {
     };
 }
 
+// Edit mode state
+if (STATE.editingCaseId === undefined) {
+    STATE.editingCaseId = null;
+}
+
 function toggleBailCase(caseId) {
+    // Prevent collapse while editing
+    if (STATE.editingCaseId === caseId) {
+        return;
+    }
     if (STATE.expandedBailCases.has(caseId)) {
         STATE.expandedBailCases.delete(caseId);
     } else {
@@ -157,6 +166,92 @@ function handleMoveSubmit(event) {
     );
 }
 
+// Edit mode functions
+function toggleEditMode(caseId) {
+    if (STATE.editingCaseId === caseId) {
+        STATE.editingCaseId = null;
+    } else {
+        STATE.editingCaseId = caseId;
+        // Auto-expand when entering edit mode
+        STATE.expandedBailCases.add(caseId);
+    }
+    render();
+}
+
+function cancelEdit() {
+    STATE.editingCaseId = null;
+    render();
+}
+
+function saveCase(event, caseId) {
+    event.preventDefault();
+    const form = event.target;
+
+    const caseInfo = findCaseById(caseId);
+    if (!caseInfo) return;
+
+    const { caseData } = caseInfo;
+
+    // Update case fields from form
+    caseData.styleOfCause = form.styleOfCause.value.trim();
+    caseData.presentDate = form.presentDate.value.trim();
+    caseData.previousReleases = form.previousReleases.value.trim();
+    caseData.facts = form.facts.value.trim();
+    caseData.criminalRecord = form.criminalRecord.value.trim() || null;
+    caseData.bailResult = form.bailResult.value.trim();
+    caseData.presidingJustice = form.presidingJustice.value.trim();
+
+    // Parse additionalCharges
+    caseData.additionalCharges = parseAdditionalCharges(form.additionalCharges.value.trim());
+
+    // Parse crownPosition
+    caseData.crownPosition = parseCrownPosition(form.crownPosition.value.trim());
+
+    STATE.editingCaseId = null;
+    render();
+}
+
+function parseAdditionalCharges(text) {
+    if (!text || text === '---') return null;
+
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+    if (lines.length === 0) return null;
+
+    const result = {
+        infoNumber: '',
+        charges: '',
+        bailStatus: ''
+    };
+
+    lines.forEach(line => {
+        if (line.toLowerCase().startsWith('info #')) {
+            result.infoNumber = line.replace(/^info #/i, '').trim();
+        } else if (line.toLowerCase().startsWith('bail:')) {
+            result.bailStatus = line.replace(/^bail:/i, '').trim();
+        } else {
+            result.charges = result.charges ? result.charges + ' ' + line : line;
+        }
+    });
+
+    return result.infoNumber || result.charges || result.bailStatus ? result : null;
+}
+
+function parseCrownPosition(text) {
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+
+    return {
+        grounds: lines[0] || '',
+        reasoning: lines.slice(1).join(' ') || ''
+    };
+}
+
+// Escape key handler
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape' && STATE.editingCaseId !== null) {
+        cancelEdit();
+    }
+});
+
 function renderMoveModal() {
     if (!STATE.moveModal.open) return '';
 
@@ -295,7 +390,9 @@ function renderBailHearing() {
                             title="Move to different date/city">
                         <i data-lucide="arrow-right-left" class="w-4 h-4"></i>
                     </button>
-                    <button class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded" title="Edit">
+                    <button onclick="toggleEditMode(${row.caseData.id})"
+                            class="p-1.5 rounded transition-colors ${STATE.editingCaseId === row.caseData.id ? 'text-blue-600 bg-blue-50' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100'}"
+                            title="${STATE.editingCaseId === row.caseData.id ? 'Cancel edit' : 'Edit'}">
                         <i data-lucide="pencil" class="w-4 h-4"></i>
                     </button>
                 </td>
@@ -303,12 +400,13 @@ function renderBailHearing() {
         `;
 
         // Expandable details row
+        const isEditing = STATE.editingCaseId === row.caseData.id;
         tableRows += `
             <tr class="${isExpanded ? '' : 'hidden'}">
                 <td></td>
                 <td></td>
                 <td colspan="2" class="px-4 pb-4">
-                    ${renderBailCaseDetails(row.caseData)}
+                    ${isEditing ? renderBailCaseEditForm(row.caseData) : renderBailCaseDetails(row.caseData)}
                 </td>
             </tr>
         `;
@@ -340,6 +438,79 @@ function renderBailHearing() {
         </div>
         ${renderMoveModal()}
     `;
+}
+
+function renderBailCaseEditForm(caseData) {
+    const additionalChargesText = caseData.additionalCharges
+        ? `Info #${caseData.additionalCharges.infoNumber}\n${caseData.additionalCharges.charges}\nBail: ${caseData.additionalCharges.bailStatus}`
+        : '';
+
+    const crownPositionText = `${caseData.crownPosition.grounds}\n${caseData.crownPosition.reasoning}`;
+
+    return `
+        <div class="bg-blue-50 border border-blue-200 rounded-md p-4 text-sm ml-6">
+            <form onsubmit="saveCase(event, ${caseData.id})" class="space-y-4">
+                <div class="grid grid-cols-[160px_1fr] gap-y-3 gap-x-4">
+                    <label class="text-slate-500 font-medium">Style of Cause:</label>
+                    <input type="text" name="styleOfCause" value="${escapeHtml(caseData.styleOfCause)}"
+                           class="px-2 py-1 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+
+                    <label class="text-slate-500 font-medium">Present Date:</label>
+                    <input type="text" name="presentDate" value="${escapeHtml(caseData.presentDate)}"
+                           class="px-2 py-1 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+
+                    <label class="text-slate-500 font-medium">Previous Releases:</label>
+                    <textarea name="previousReleases" rows="2"
+                              class="px-2 py-1 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y">${escapeHtml(caseData.previousReleases)}</textarea>
+
+                    <label class="text-slate-500 font-medium">Facts:</label>
+                    <textarea name="facts" rows="2"
+                              class="px-2 py-1 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y">${escapeHtml(caseData.facts)}</textarea>
+
+                    <label class="text-slate-500 font-medium">Criminal Record:</label>
+                    <textarea name="criminalRecord" rows="2"
+                              class="px-2 py-1 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y">${escapeHtml(caseData.criminalRecord || '')}</textarea>
+
+                    <label class="text-slate-500 font-medium">Additional Charges:</label>
+                    <textarea name="additionalCharges" rows="3" placeholder="Info #...\nCharges...\nBail: ..."
+                              class="px-2 py-1 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y">${escapeHtml(additionalChargesText)}</textarea>
+
+                    <label class="text-slate-500 font-medium">Crown Position:</label>
+                    <textarea name="crownPosition" rows="2" placeholder="Grounds...\nReasoning..."
+                              class="px-2 py-1 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y">${escapeHtml(crownPositionText)}</textarea>
+
+                    <label class="text-slate-500 font-medium">Bail Result:</label>
+                    <input type="text" name="bailResult" value="${escapeHtml(caseData.bailResult)}"
+                           class="px-2 py-1 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+
+                    <label class="text-slate-500 font-medium">Presiding Justice:</label>
+                    <input type="text" name="presidingJustice" value="${escapeHtml(caseData.presidingJustice)}"
+                           class="px-2 py-1 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="flex justify-end gap-3 pt-3 border-t border-blue-200">
+                    <button type="button" onclick="cancelEdit()"
+                            class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 bg-blue-500 text-white hover:bg-blue-600 rounded-lg transition-colors">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    `;
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }
 
 function renderBailCaseDetails(caseData) {
