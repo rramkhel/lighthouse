@@ -3,73 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Legal Case Management System</title>
+    <title>Legal Tools Suite</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .border-l-3 { border-left-width: 3px; }
-        .min-h-24 { min-height: 6rem; }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        .slide-down {
-            animation: slideDown 0.3s ease-out;
-        }
-        .stat-card {
+        .card {
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
         }
-        .stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+        .card:hover .icon-container {
+            transform: scale(1.1);
+        }
+        .icon-container {
+            transition: transform 0.3s ease;
         }
     </style>
 </head>
-<body class="bg-gray-50">
-    <div id="app"></div>
+<body class="bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
+    <div class="min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b border-slate-200">
+            <div class="max-w-6xl mx-auto px-6 py-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                        <i data-lucide="scale" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-800">Legal Tools Suite</h1>
+                        <p class="text-sm text-slate-500">Web-based tools for legal case management</p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex items-center justify-center px-6 py-12">
+            <div class="max-w-4xl w-full">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-semibold text-slate-700 mb-3">Select a Tool</h2>
+                    <p class="text-slate-500">Choose from our suite of legal management applications</p>
+                </div>
+
+                <!-- Project Cards -->
+                <div class="grid md:grid-cols-2 gap-8">
+                    <!-- Lighthouse Card -->
+                    <a href="./lighthouse/index.html" class="card bg-white rounded-2xl p-8 shadow-lg border border-slate-100 block">
+                        <div class="icon-container w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mb-6">
+                            <i data-lucide="lighthouse" class="w-8 h-8 text-blue-600"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-slate-800 mb-2">Lighthouse</h3>
+                        <p class="text-blue-600 font-medium mb-4">Case Management System</p>
+                        <p class="text-slate-600 leading-relaxed">
+                            Track cases, documents, court dates, and trial preparation.
+                            Comprehensive dashboard for managing your legal workload.
+                        </p>
+                        <div class="mt-6 flex items-center text-blue-600 font-medium">
+                            <span>Open Lighthouse</span>
+                            <i data-lucide="arrow-right" class="w-5 h-5 ml-2"></i>
+                        </div>
+                    </a>
+
+                    <!-- Bell Tower Card -->
+                    <a href="./bell-tower/index.html" class="card bg-white rounded-2xl p-8 shadow-lg border border-slate-100 block">
+                        <div class="icon-container w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mb-6">
+                            <i data-lucide="bell" class="w-8 h-8 text-amber-600"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-slate-800 mb-2">Bell Tower</h3>
+                        <p class="text-amber-600 font-medium mb-4">Case Scheduling System</p>
+                        <p class="text-slate-600 leading-relaxed">
+                            Assign the right cases to the right court days.
+                            Optimize scheduling and manage courtroom capacity.
+                        </p>
+                        <div class="mt-6 flex items-center text-amber-600 font-medium">
+                            <span>Open Bell Tower</span>
+                            <i data-lucide="arrow-right" class="w-5 h-5 ml-2"></i>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-white border-t border-slate-200 py-6">
+            <div class="max-w-6xl mx-auto px-6 text-center text-slate-500 text-sm">
+                <p>Legal Tools Suite &copy; 2025</p>
+            </div>
+        </footer>
+    </div>
 
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-
-    <!-- Data Layer -->
-    <script src="js/data.js"></script>
-    
-    <!-- Utility Functions -->
-    <script src="js/utils.js"></script>
-    
-    <!-- Components -->
-    <script src="js/components/header.js"></script>
-    <script src="js/components/navigation.js"></script>
-    <script src="js/components/rightSidebar.js"></script>
-    <script src="js/components/statCard.js"></script>
-    <script src="js/components/documentCard.js"></script>
-    <script src="js/components/courtEventCard.js"></script>
-    <script src="js/components/recentChanges.js"></script>
-    <script src="js/components/searchResults.js"></script>
-    
-    <!-- Views/Pages -->
-    <script src="js/views/dashboard.js"></script>
-    <script src="js/views/recentUpdates.js"></script>
-    <script src="js/views/searchResultsPage.js"></script>
-    <script src="js/views/cases.js"></script>
-    <script src="js/views/caseDetail.js"></script>
-    <script src="js/views/documents.js"></script>
-    <script src="js/views/calendar.js"></script>
-    <script src="js/views/weekPlanner.js"></script>
-    <script src="js/views/progress.js"></script>
-    <script src="js/views/trialPrep.js"></script>
-    
-    <!-- Router -->
-    <script src="js/router.js"></script>
-    
-    <!-- Main App -->
-    <script src="js/app.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
 </body>
 </html>
