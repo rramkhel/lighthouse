@@ -1,10 +1,16 @@
 // Bell Tower Dashboard View
 
-// Calendar state
+// Calendar state - initialize to first month with bail hearings, or current month
 if (STATE.calendarMonth === undefined) {
-    const today = new Date();
-    STATE.calendarMonth = today.getMonth();
-    STATE.calendarYear = today.getFullYear();
+    if (DATA.bailHearings && DATA.bailHearings.length > 0) {
+        const firstDate = new Date(DATA.bailHearings[0].date + 'T00:00:00');
+        STATE.calendarMonth = firstDate.getMonth();
+        STATE.calendarYear = firstDate.getFullYear();
+    } else {
+        const today = new Date();
+        STATE.calendarMonth = today.getMonth();
+        STATE.calendarYear = today.getFullYear();
+    }
     STATE.selectedDate = null;
 }
 
