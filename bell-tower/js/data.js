@@ -42,6 +42,172 @@ const DATA = {
     timeSlots: [
         '8:30 AM', '9:00 AM', '9:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
         '1:00 PM', '1:30 PM', '2:00 PM', '2:30 PM', '3:00 PM', '3:30 PM', '4:00 PM'
+    ],
+
+    // Bail hearing schedule organized by date > city > cases
+    bailHearings: [
+        {
+            date: '2026-05-14',
+            cities: [
+                {
+                    name: 'Edmonton',
+                    cases: [
+                        {
+                            id: 1,
+                            styleOfCause: 'R. v. Smith',
+                            presentDate: '2025-03-24',
+                            previousReleases: 'Previously released on: 2025-08-24; Keep Peace + Be of good behavior, Curfew 7PM à 7AM.',
+                            facts: '---',
+                            criminalRecord: '2 prior convictions - theft under $5000 (2019), breach of probation (2021)',
+                            additionalCharges: {
+                                infoNumber: '24-12345',
+                                charges: 'Assault causing bodily harm',
+                                bailStatus: 'Released with conditions'
+                            },
+                            crownPosition: {
+                                grounds: 'Opposed to bail on Secondary + Tertiary Grounds',
+                                reasoning: 'Flight risk due to prior FTA; public safety concerns'
+                            },
+                            bailResult: 'Bail Denied - secondary grounds',
+                            presidingJustice: 'Justice Ambrose'
+                        },
+                        {
+                            id: 2,
+                            styleOfCause: 'R. v. Wade',
+                            presentDate: '2026-05-14',
+                            previousReleases: 'No prior releases',
+                            facts: 'Accused allegedly committed break and enter on Jan 15, 2026.',
+                            criminalRecord: 'No prior record',
+                            additionalCharges: null,
+                            crownPosition: {
+                                grounds: 'Opposed on Secondary Grounds',
+                                reasoning: 'Substantial likelihood of reoffending'
+                            },
+                            bailResult: 'Pending',
+                            presidingJustice: '---'
+                        }
+                    ]
+                },
+                {
+                    name: 'Calgary',
+                    cases: [
+                        {
+                            id: 3,
+                            styleOfCause: 'R. v. Scooby',
+                            presentDate: '2026-05-14',
+                            previousReleases: 'Released 2026-01-10; No contact with co-accused',
+                            facts: 'Accused charged with mischief and theft.',
+                            criminalRecord: 'No prior record',
+                            additionalCharges: null,
+                            crownPosition: {
+                                grounds: 'Consent release',
+                                reasoning: 'Low risk, community ties'
+                            },
+                            bailResult: 'Pending',
+                            presidingJustice: '---'
+                        },
+                        {
+                            id: 4,
+                            styleOfCause: 'R. v. Velma',
+                            presentDate: '2026-05-14',
+                            previousReleases: 'No prior releases',
+                            facts: 'Fraud charges involving multiple victims.',
+                            criminalRecord: '1 prior - fraud under $5000 (2023)',
+                            additionalCharges: {
+                                infoNumber: '25-98765',
+                                charges: 'Uttering forged documents',
+                                bailStatus: 'Detained'
+                            },
+                            crownPosition: {
+                                grounds: 'Opposed on Secondary + Tertiary Grounds',
+                                reasoning: 'Pattern of fraudulent behavior'
+                            },
+                            bailResult: 'Pending',
+                            presidingJustice: '---'
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            date: '2026-05-18',
+            cities: [
+                {
+                    name: 'Edmonton',
+                    cases: [
+                        {
+                            id: 5,
+                            styleOfCause: 'R. v. Fred',
+                            presentDate: '2026-05-18',
+                            previousReleases: 'No prior releases',
+                            facts: 'DUI causing bodily harm.',
+                            criminalRecord: 'No prior record',
+                            additionalCharges: null,
+                            crownPosition: {
+                                grounds: 'Consent release with conditions',
+                                reasoning: 'First offense, stable employment'
+                            },
+                            bailResult: 'Pending',
+                            presidingJustice: '---'
+                        },
+                        {
+                            id: 6,
+                            styleOfCause: 'R. v. Daphne',
+                            presentDate: '2026-05-18',
+                            previousReleases: 'Released 2026-02-01; House arrest',
+                            facts: 'Aggravated assault.',
+                            criminalRecord: '3 priors - assault (2020, 2022), weapons (2023)',
+                            additionalCharges: {
+                                infoNumber: '26-11111',
+                                charges: 'Weapons possession',
+                                bailStatus: 'Detained'
+                            },
+                            crownPosition: {
+                                grounds: 'Opposed on all grounds',
+                                reasoning: 'Escalating violence; multiple breaches'
+                            },
+                            bailResult: 'Pending',
+                            presidingJustice: '---'
+                        }
+                    ]
+                },
+                {
+                    name: 'Red Deer',
+                    cases: [
+                        {
+                            id: 7,
+                            styleOfCause: 'R. v. Shaggy',
+                            presentDate: '2026-05-18',
+                            previousReleases: 'No prior releases',
+                            facts: 'Possession for purpose of trafficking.',
+                            criminalRecord: 'No prior record',
+                            additionalCharges: null,
+                            crownPosition: {
+                                grounds: 'Reverse onus - opposed',
+                                reasoning: 'Schedule I substance; quantity indicates trafficking'
+                            },
+                            bailResult: 'Pending',
+                            presidingJustice: '---'
+                        },
+                        {
+                            id: 8,
+                            styleOfCause: 'R. v. M. Machine',
+                            presentDate: '2026-05-18',
+                            previousReleases: 'Released 2025-12-01; Surety supervision',
+                            facts: 'Robbery with weapon.',
+                            criminalRecord: '2 priors - robbery (2021), breach (2024)',
+                            additionalCharges: null,
+                            crownPosition: {
+                                grounds: 'Opposed on Secondary + Tertiary Grounds',
+                                reasoning: 'Violence with weapon; breach while on release'
+                            },
+                            bailResult: 'Pending',
+                            presidingJustice: '---'
+                        }
+                    ]
+                }
+            ]
+        }
     ]
 };
 

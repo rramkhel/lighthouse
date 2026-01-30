@@ -16,6 +16,11 @@ Router.add('/assign', () => {
     render();
 });
 
+Router.add('/bail-hearing', () => {
+    STATE.currentView = 'bail-hearing';
+    render();
+});
+
 // Main render function
 function render() {
     const app = document.getElementById('app');
@@ -45,6 +50,9 @@ function render() {
             break;
         case 'assign':
             content += renderAssign();
+            break;
+        case 'bail-hearing':
+            content += renderBailHearing();
             break;
         default:
             content += renderDashboard();

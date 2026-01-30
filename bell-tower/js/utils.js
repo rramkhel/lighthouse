@@ -150,3 +150,47 @@ function removeAssignment(assignmentId) {
         render();
     }
 }
+
+// Get bail result color class
+function getBailResultColor(result) {
+    if (result.includes('Denied')) return 'text-red-600';
+    if (result === 'Pending') return 'text-slate-500';
+    return 'text-green-600';
+}
+
+// Get crown position color class
+function getCrownPositionColor(grounds) {
+    if (grounds.toLowerCase().includes('consent')) return 'text-green-700';
+    if (grounds.toLowerCase().includes('all grounds')) return 'text-red-700';
+    return 'text-amber-700';
+}
+
+// Flatten bail hearing schedule into table rows
+function flattenBailHearings(schedule) {
+    const rows = [];
+
+    schedule.forEach((dateEntry) => {
+        let isFirstRowForDate = true;
+
+        dateEntry.cities.forEach((city, cityIdx) => {
+            let isFirstRowForCity = true;
+
+            city.cases.forEach((caseData, caseIdx) => {
+                rows.push({
+                    date: dateEntry.date,
+                    showDate: isFirstRowForDate,
+                    city: city.name,
+                    showCity: isFirstRowForCity,
+                    caseData: caseData,
+                    isFirstCaseInCity: caseIdx === 0,
+                    isLastCityInDate: cityIdx === dateEntry.cities.length - 1,
+                });
+
+                isFirstRowForDate = false;
+                isFirstRowForCity = false;
+            });
+        });
+    });
+
+    return rows;
+}

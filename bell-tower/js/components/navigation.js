@@ -8,26 +8,39 @@ function toggleSidebar() {
 function renderNavigation(currentView) {
     const navItems = [
         { id: 'dashboard', label: 'Dashboard', icon: 'layout-dashboard' },
-        { id: 'schedule', label: 'Schedule', icon: 'calendar' },
-        { id: 'assign', label: 'Assign Cases', icon: 'calendar-plus' }
+        { id: 'bail-hearing', label: 'Bail Hearings', icon: 'gavel' },
+        { id: 'schedule', label: 'Schedule', icon: 'calendar', comingSoon: true }
     ];
 
     const isOpen = STATE.sidebarOpen;
     const sidebarWidth = isOpen ? 'w-64' : 'w-16';
 
-    const navHTML = navItems.map(item => `
-        <button
-            onclick="Router.navigate('/${item.id}')"
-            class="flex items-center ${isOpen ? 'gap-3 px-4' : 'justify-center px-0'} py-3 font-medium text-sm transition-all rounded-lg w-full ${currentView === item.id
-            ? 'bg-amber-600 text-white shadow-sm'
-            : 'text-gray-700 hover:bg-gray-100'
-        }"
-            title="${!isOpen ? item.label : ''}"
-        >
-            <i data-lucide="${item.icon}" class="w-5 h-5 flex-shrink-0"></i>
-            ${isOpen ? `<span class="truncate">${item.label}</span>` : ''}
-        </button>
-    `).join('');
+    const navHTML = navItems.map(item => {
+        if (item.comingSoon) {
+            return `
+                <div
+                    class="flex items-center ${isOpen ? 'gap-3 px-4' : 'justify-center px-0'} py-3 font-medium text-sm rounded-lg w-full text-gray-400 cursor-not-allowed"
+                    title="${!isOpen ? item.label + ' (Coming Soon)' : 'Coming Soon'}"
+                >
+                    <i data-lucide="${item.icon}" class="w-5 h-5 flex-shrink-0"></i>
+                    ${isOpen ? `<span class="truncate">${item.label}</span><span class="ml-auto text-xs bg-gray-200 text-gray-500 px-2 py-0.5 rounded">Soon</span>` : ''}
+                </div>
+            `;
+        }
+        return `
+            <button
+                onclick="Router.navigate('/${item.id}')"
+                class="flex items-center ${isOpen ? 'gap-3 px-4' : 'justify-center px-0'} py-3 font-medium text-sm transition-all rounded-lg w-full ${currentView === item.id
+                ? 'bg-amber-600 text-white shadow-sm'
+                : 'text-gray-700 hover:bg-gray-100'
+            }"
+                title="${!isOpen ? item.label : ''}"
+            >
+                <i data-lucide="${item.icon}" class="w-5 h-5 flex-shrink-0"></i>
+                ${isOpen ? `<span class="truncate">${item.label}</span>` : ''}
+            </button>
+        `;
+    }).join('');
 
     return `
         <nav class="fixed left-0 top-0 h-screen ${sidebarWidth} bg-white border-r border-gray-200 shadow-sm z-20 flex flex-col transition-all duration-300">
